@@ -1,8 +1,18 @@
 baseurl = "http://replace-this-with-your-hugo-site.com/"
 languageCode = "en-us"
-title = "HackerZ - Test Hugo"
+title = "HackerZ - Blog"
 theme = "hyde"
 
+[Author]
+    Name = "HackerZ"
+
 [params]
-    description = "这里是HackerZ的个人博客"
+    description = "Welcome to my personal Blog"
     themeColor = "theme-base-08"  # for hyde theme
+    Imglogo = "author-head.png"
+
+[Menu]
+    [[Menu.main]]
+        Name = "About"
+        URL  = "/about"
+        Weight = 1

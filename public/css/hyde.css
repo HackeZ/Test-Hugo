@@ -248,3 +248,12 @@ a.sidebar-nav-item:focus {
 .theme-base-0f .related-posts li a:hover {
   color: #8f5536;
 }
+
+/* Round Head */
+.round-head {
+  width:100px;
+  height:100px;
+  border-radius:100px;
+  padding-bottom: 250px;
+  margin: auto;
+}
