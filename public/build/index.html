@@ -1,0 +1,279 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> 本篇将教会你如何使用Hugo快捷地在Github中创建自己的Blog &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>本篇将教会你如何使用Hugo快捷地在Github中创建自己的Blog</h1>
+			  <span class="post-date">Wed, Apr 13, 2016</span>
+			      
+
+<h2 id="安装hugo">安装Hugo</h2>
+
+<hr />
+
+<p>Hugo是一个使用Golang语言编写的静态Web站点生成框架，其是由Docker前员工Steve Francia进行编写的，因为其开源在Github里，所以安装非常方便，我们可以选择二进制安装包进行安装。安装完成之后可以运行以下命令查看是否正确安装：</p>
+
+<blockquote>
+<p>$ hugo version</p>
+</blockquote>
+
+<p>正确安装应该会出现如下信息：</p>
+
+<blockquote>
+<p>Hugo Static Site Generator v0.14 BuildDate: 2015-05-26T09:29:16+08:00</p>
+</blockquote>
+
+<p>接下来就可以愉快地开始Hugo之旅了。</p>
+
+<h2 id="创建hugo项目">创建Hugo项目</h2>
+
+<hr />
+
+<p>创建Hugo项目可以使用如下命令</p>
+
+<blockquote>
+<p>$ hugo new site &lt;site-name&gt;</p>
+</blockquote>
+
+<p>这样在该目录下就会出现这个项目文件夹了。
+我们 cd 进入该目录，可以看到该目录下有一个名为：</p>
+
+<blockquote>
+<p>config.toml</p>
+</blockquote>
+
+<p>的文件，根据其名字很容易就知道这个就是Hugo的站点的配置文件了。
+该文件中仅仅只有3行代码：</p>
+
+<blockquote>
+<p>baseurl = &ldquo;<a href="http://replace-this-with-your-hugo-site.com/&quot;">http://replace-this-with-your-hugo-site.com/&quot;</a>
+languageCode = &ldquo;en-us&rdquo;<br />
+title = &ldquo;My New Hugo Site&rdquo;</p>
+</blockquote>
+
+<p>同样也是根据其单词我们也可以知道他们代表的是什么，我们可以对title进行一下修改，改为我们Blog的名字。</p>
+
+<p>然后我们在该目录下运行命令：</p>
+
+<blockquote>
+<p>$ hugo server</p>
+</blockquote>
+
+<p>这个命令会将repo转换成静态html文件放入项目的public文件夹下，然后通过访问浏览器的</p>
+
+<blockquote>
+<p><a href="http://localhost:1313">http://localhost:1313</a></p>
+</blockquote>
+
+<p>地址，即可看到Hugo启动起来了。虽然现在站点是空白一片，但是通过添加Hugo主题，我们可以瞬间建立一个完整Blog站点。</p>
+
+<h2 id="选取hugo主题">选取Hugo主题</h2>
+
+<hr />
+
+<p>我们可以到Hugo官网选取自己喜欢的<a href="http://themes.gohugo.io/">主题</a>
+下面我以Hyde主题为例，将该主题应用到自己的Blog中。</p>
+
+<p>首先在站点的根目录下创建一个 themes 文件夹。</p>
+
+<blockquote>
+<p>$ mkdir themes<br />
+$ cd themes<br />
+$ git clone <a href="https://github.com/spf13/hyde.git">https://github.com/spf13/hyde.git</a>  #下载对应主题</p>
+</blockquote>
+
+<p>然后，我们需要对根目录下的</p>
+
+<blockquote>
+<p>config.toml</p>
+</blockquote>
+
+<p>进行配置，以应用下载下来的主题。</p>
+
+<p>配置完成的文件如下所示：</p>
+
+<pre><code class="language-toml">baseurl = &quot;http://replace-this-with-your-hugo-site.com/&quot;
+languageCode = &quot;en-us&quot;    
+title = &quot;HackerZ - Blog&quot;    
+theme = &quot;hyde&quot;   # 指定themes
+
+[params]    
+	description = &quot;Welcome to my personal Blog&quot;   # hyde主题的首页描述 
+	themeColor = &quot;theme-base-08&quot;  # 指定hyde的主题颜色
+</code></pre>
+
+<p>这样，主题就算是配置好了，让我们再次运行</p>
+
+<blockquote>
+<p>$ hugo server</p>
+</blockquote>
+
+<p>看看效果吧！</p>
+
+<h2 id="新建文章">新建文章</h2>
+
+<hr />
+
+<p>首页以及样式都已经有了，那么下面就来看看怎么新建一篇文章吧。</p>
+
+<p>在站点项目下运行</p>
+
+<blockquote>
+<p>$ hugo new welcome.md</p>
+</blockquote>
+
+<p>即可看到在项目的content目录下被创建了一个 welcome.md 文件，该文件就是刚才新建出来的文章了。
+我们可以往里面写点东西，注意，这是 markdown 格式的，hugo会将其编译成 html 格式放置在 public 目录下。</p>
+
+<blockquote>
+<p>welcome.md</p>
+
+<pre><code>+++    
+Categories = [&quot;Development&quot;, &quot;GoLang&quot;]    
+Description = &quot;&quot;    
+Tags = [&quot;Development&quot;, &quot;golang&quot;]    
+date = &quot;2016-03-29T14:38:19+08:00&quot;    
+menu = &quot;main&quot;    
+title = &quot;Welcome&quot;    
+
++++
+
+### 
+这是使用Hugo创建的站点中的第一篇文章。
+</code></pre>
+
+<p>然后启动Hugo服务查看效果吧。</p>
+
+<p>$ hugo server</p>
+</blockquote>
+
+<p>到这里，基本的Hugo使用已经讲解完毕了，接下来就要将该静态站点迁移到我们自己的 github.io 中了。</p>
+
+<h2 id="使用github-pages">使用Github Pages</h2>
+
+<p>要使用 github-pages 首先需要注册属于自己的 github 账号，注册完成之后，创建一个 repository，名为</p>
+
+<blockquote>
+<p>&lt;USERNAME&gt;.github.io</p>
+</blockquote>
+
+<p>这个是使用 Github Pages 的命名规定，如我自己就是</p>
+
+<blockquote>
+<p>HackeZ.github.io</p>
+</blockquote>
+
+<p>创建完成之后，在我们已经写好的Hugo站点下修改配置文件中的 baseurl属性：</p>
+
+<blockquote>
+<p>config.toml</p>
+
+<pre><code>baseurl = &quot;http://&amp;lt;USERNAME&gt;.github.io//&quot;
+# baseurl = &quot;http://replace-this-with-your-hugo-site.com/&quot;
+# 原baseurl可以将其注释掉，之后本地可以进行调试
+</code></pre>
+
+<p>保存后，运行如下命令：</p>
+
+<p>$ hugo -v</p>
+</blockquote>
+
+<p>该命令会将配置文件中的参数进行静态文件编译，运行完之后，可以到public下的 index.html 中看看静态文件的地址是否是有误，如果有误，将不能正确地显示出主题样式。</p>
+
+<p>一切正确之后，我们以public目录为 &lt;USERNAME&gt;.github.io 项目的主分支，将其 push 到 github仓库中，等待10分钟左右，访问属于你自己的Blog网站吧！</p>
+
+<blockquote>
+<p>http://&lt;USERNAME&gt;.github.io</p>
+</blockquote>
+
+<h2 id="配置属于自己的hugo主题">配置属于自己的Hugo主题</h2>
+
+<p>你们可以看到，我已经对原来的Hyde主题进行了修改了，那么是怎么做到的呢，我们可以直接对 themes/hyde 下的配置文件进行修改，增加自己想要的样式，相信聪明的你肯定可以很快熟悉 Hugo 的语法，创建属于自己的主题。</p>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

@@ -1,0 +1,292 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> C Prefess Program Note &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>C Prefess Program Note</h1>
+			  <span class="post-date">Sat, Jul 30, 2016</span>
+			      
+
+<h1 id="c专家编程-笔记本">《C专家编程》 笔记本</h1>
+
+<h3 id="c专家编程-是每一位程序员应该读的第二本c语言书籍">《C专家编程》是每一位程序员应该读的第二本C语言书籍！</h3>
+
+<blockquote>
+<p>讲了各种c的缺陷，推荐go用户好好体验，很多都在go里做了修正 —— [ggarlic]()</p>
+
+<p>书很好，翻译一般，校对不负责任。</p>
+</blockquote>
+
+<ol>
+<li><p><strong>新西兰</strong> 是关于时间编程的一个特殊地点；</p></li>
+
+<li><p>编译器设计者的金科玉律 <strong>效率（几乎）就是一切</strong>；</p></li>
+
+<li><p>B语言是 <strong>解释模式</strong> 语言，而C语言是 <strong>编译模式并引入了类型系统</strong> ，使效率大大提高；</p></li>
+
+<li><p>C语言是为了 <strong>编译器设计者</strong> 而生的，这就是为什么很多编程语言在初期都是使用C语言编译器的原因；</p></li>
+
+<li><p>为什么数组 <strong>下标从0开始</strong> ？</p>
+
+<ul>
+<li>在计算资源缺乏的过去，0标号的写法可以节省编译时间</li>
+<li>现代语言中0标号可以更优雅的表示数组字串</li>
+<li>在支持指针的语言中，标号被视作是偏移量，因此从0开始更符合逻辑</li>
+</ul></li>
+
+<li><p>将 <strong>常量放在比较表达式的前面</strong> 可以大大减少因打字出错将 <code>==</code> 输入为 <code>=</code> 的情况 <code>if(3 == x) {...}</code></p></li>
+
+<li><p><strong>Bourne Shell</strong> 的出现促成了 The International Obfuscated C Code Competition（国际C语言混乱代码大赛）；</p></li>
+
+<li><p><strong>ANSI C</strong> 美国国家标准化组织所定下的C语言标准；</p></li>
+
+<li><p>语言律师 —— “可以从200多页的手册中提炼出5句话，并起来放到你面前，你只要一看就能明白自己问题答案的人”；</p></li>
+
+<li><p>关键字 <code>const</code> 并不能把变量变成常量！在一个符号前面加上 <code>const</code> 只是表示这个符号不能被赋值，也就是变为 <strong>Read Only</strong> 。其最有用之处在于限定函数的形参，这样该函数将不会修改实参指针所指的数据，但其他的（没有用 <code>const</code> 的）函数却有可能修改它。</p></li>
+
+<li><p>尽量不要在你的程序中使用 <strong>无符号类型</strong> ，以免增加不必要的复杂性。尤其是，不要仅仅因为其不存在负值（如年龄、 国债）而用它来表示数量。因为在某些情况下，会出现以下 BUG：</p>
+
+<ul>
+<li>-1 会被翻译成非常巨大的正整数。</li>
+<li>-1 会比 1 大。</li>
+</ul></li>
+
+<li><p><code>malloc(strlen(str))</code> 几乎永远是错误的，因为 不要忘记还有 <code>'\0'</code> ；</p></li>
+
+<li><p>NUL  用于结束有一个 ASCII 码零的正确术语；
+NULL 用于表示什么都不指向；</p></li>
+
+<li><p>如果需要使用一些临时变量的时候，请把它放在块的开始处！</p></li>
+
+<li><p>缺省采用 &ldquo;Fall Through&rdquo;，在 <strong>97%</strong> 的情况下都是错误的！</p>
+
+<pre><code class="language-c">// Fall Through : End without break;
+switch (number) {
+case 1: printf(&quot;case 1\n&quot;);
+case 2: printf(&quot;case 2\n&quot;);
+case 3: printf(&quot;case 3\n&quot;);
+...
+}
+</code></pre></li>
+
+<li><p>一种简单的方法，使一段代码第一次执行时的行为与以后的执行的行为不同；</p>
+
+<pre><code class="language-c">generate_initializer(char * string) 
+{
+static char separator = ' ';
+printf(&quot;%c %s\n&quot;, separator, string);
+separator = ',';
+}
+</code></pre></li>
+
+<li><p>重载之过：
+```c
+// 这是多少个乘号？
+p = N * sizeof * q;
+r = malloc(p);
+// 答案：1个，sizeof操作符将指针q指向的东西作为操作数，它返回q所指对象的类型的字节数</p></li>
+</ol>
+
+<p>// 这是int的长度乘以p？还是把未知类型的指针强制转换为int？
+apple = sizeof(int) * p;</p>
+
+<pre><code>
+18. 什么是 **结合性** ？
+
+&gt; 在几个操作符具有相同优先级的时候决定先运行哪一个。
+
+19. 为什么要使用 fgets() 而不是 gets() ？
+
+20. 注释符缺陷：
+```c
+a //*
+//*/ b
+</code></pre>
+
+<blockquote>
+<p>means a/b in C but a in C++</p>
+</blockquote>
+
+<ol>
+<li><p>早用line，勤用lint。当你做错事的时候，他会告诉你哪里不对，应该始终使用lint程序，按照它的道德标准办事。像使用 <code>go-lint</code> 一样写出优秀的代码。</p></li>
+
+<li><p>将结构的声明与变量的定义分开可以使代码更加容易阅读：</p>
+
+<pre><code class="language-c">struct veg { int weight, price_per_lb; };
+struct veg onion, radish, turnip;
+</code></pre></li>
+
+<li><p><code>union</code> 与 <code>struct</code> 不同的是：</p></li>
+</ol>
+
+<blockquote>
+<p>在内存布局中，struct 是将每个成员依次存储，而在 union 中，所有的成员都从偏移地址零开始存储。这样，每个成员的位置都重叠在一起：在某个时刻，只有一个成员真正存储于该地址。</p>
+
+<p>所以 union 一般用于节省空间，因为 有些数据是不可能同时出现的，如果同时存储他们，显然颇为浪費。可以将互斥的两个字段存储于一个 union 中来节省空间：</p>
+</blockquote>
+
+<pre><code class="language-c">union secondary_characteristics {
+    char has_fur;
+    short num_of_leg_in_excess_of_4;
+};
+struct creature {
+    char has_backbone;
+    union secondary_characteristics form;
+};
+</code></pre>
+
+<blockquote>
+<p>这种方法在存储 2*10^7 只动物的时候可以节省 20MB 磁盘空间。</p>
+
+<p>union 也可以将同一个数据解释成两个不同的东西：</p>
+</blockquote>
+
+<pre><code class="language-c">union bits32_tag {
+    int whole;  /* 一个32位的值 */
+    struct {char c0, c1, c2, c3; } byte; /* 4个8位的字节 */
+} value;
+</code></pre>
+
+<ol>
+<li><p><code>enum</code> 也就是 Golang 中的 <code>toao</code>：</p>
+
+<pre><code class="language-c">enum sizes { small = 7, medium, large = 10, humungous };
+// medium = 8 ; humungous = 11;
+</code></pre></li>
+
+<li><p>理解C语言声明的优先级规则</p>
+
+<ul>
+<li>A 声明从它的名字开始读取，然后按照优先级顺序依次读取。</li>
+<li>B 优先级从高到低依次是：
+
+<ul>
+<li>1 声明中被括号括起来的那部分</li>
+<li>2 后缀操作符：
+
+<ul>
+<li>括号 () 表示这是一个函数；</li>
+<li>方括号 [] 表示这是一个数组；</li>
+</ul></li>
+<li>3 前缀操作符：星号 * 表示 “指向&hellip;的指针”</li>
+</ul></li>
+<li>C 如果 const 和（或）volatie 关键字的后面紧跟类型说明符（如int，long等），那么它作用于类型说明符。在其他情况下，const 和（或）volatie关键字作用于它左边紧邻的指针星号。</li>
+</ul></li>
+</ol>
+
+<pre><code class="language-c">char * const *(*next) ();
+</code></pre>
+
+<blockquote>
+<p>next 是一个指向函数的指针，该函数返回另一个指针，该指针指向一个只读的指向char的指针。</p>
+</blockquote>
+
+<ol>
+<li>使字符串的比较看上去更自然：</li>
+</ol>
+
+<blockquote>
+<p>strcmp() 函数用于比较两个字符串，当他们相等返回 0</p>
+</blockquote>
+
+<pre><code class="language-c">// 这看起来有点不符合语法
+if(!strcmp(s, &quot;volatile&quot;)) return QUALIFIER;
+
+// 也许我们可以这样做
+#define STRCMP(a, R, b) (strcmp(a, b) R 0)
+if(STRCMP(s, == , &quot;volatile&quot;))
+</code></pre>
+
+<ol>
+<li><p>数组与指针的区别： <code>P102</code></p></li>
+
+<li></li>
+</ol>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

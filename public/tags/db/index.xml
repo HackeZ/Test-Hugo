@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Db on HackerZ - Blog</title>
+    <link>http://hackez.github.io/tags/db/</link>
+    <description>Recent content in Db on HackerZ - Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 22 Jul 2016 10:41:10 +0800</lastBuildDate>
+    <atom:link href="http://hackez.github.io/tags/db/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Redigo Action - 1</title>
+      <link>http://hackez.github.io/redigo-action-1/</link>
+      <pubDate>Fri, 22 Jul 2016 10:41:10 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/redigo-action-1/</guid>
+      <description>
+
+&lt;h1 id=&#34;redigo-action&#34;&gt;Redigo Action&lt;/h1&gt;
+
+&lt;h4 id=&#34;redis-作为一个内存型的高性能数据库-如今是越来越火了-为了得到更高的-qps-以及-tps-我们无法忽视掉这个如此强大的数据库&#34;&gt;Redis 作为一个内存型的高性能数据库，如今是越来越火了，为了得到更高的 QPS 以及 TPS ，我们无法忽视掉这个如此强大的数据库。&lt;/h4&gt;
+
+&lt;h4 id=&#34;在-redis-官网中-golang语言的-框架-http-redis-io-clients-go-有两个是被官方所推荐的-分别为&#34;&gt;在 Redis 官网中，Golang语言的&lt;a href=&#34;http:redis.io/clients#go&#34;&gt;框架&lt;/a&gt;有两个是被官方所推荐的，分别为：&lt;/h4&gt;
+
+&lt;p&gt;&lt;strong&gt;1. &lt;a href=&#34;https:github.com/garyburd/redigo&#34;&gt;Redigo&lt;/a&gt;&lt;/strong&gt;
+&lt;strong&gt;2. &lt;a href=&#34;https:github.com/mediocregopher/radix.v2&#34;&gt;Radix&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h4 id=&#34;本着源码易读优先-我选择了-redigo-进行开发尝试-项目地址-点我-https-www-github-com-hackez-getacfunpage&#34;&gt;本着源码易读优先，我选择了 Redigo 进行开发尝试，项目地址&lt;a href=&#34;https:www.github.com/HackeZ/getAcFunPage&#34;&gt;点我&lt;/a&gt;。&lt;/h4&gt;
+
+&lt;h3 id=&#34;action&#34;&gt;Action&lt;/h3&gt;
+
+&lt;p&gt;熟悉Redis的同学都知道，Redis是 &lt;strong&gt;单进程，单线程，IO多路复用&lt;/strong&gt; 的，这一点不同于 MySQL 的多线程。
+ 这就意味这Redis可以使用长连接来进行通信，那么，我们就需要一个连接池去管理这些长连接，当一个长连接使用完毕之后就可以交给下一个长连接继续进行使用。&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;连接池&lt;/strong&gt;
+基本思想是在系统初始化的时候，将数据库连接作为对象存储在内存中，当用户需要访问数据库时，并非建立一个新的连接，而是从连接池中取出一个已建立的空闲连接对象。使用完毕后，用户也并非将连接关闭，而是将连接放回连接池中，以供下一个请求访问使用。
+而连接的建立、断开都由连接池自身来管理。同时，还可以通过设置连接池的参数来控制连接池中的初始连接数、连接的上下限数以及每个连接的最大使用次数、最大空闲时间等等。
+也可以通过其自身的管理机制来监视数据库连接的数量、使用情况等。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;而 Redigo 就是支持连接池的，看看 &lt;a href=&#34;https:github.com/garyburd/redigo/blob/master/redis/pool.go#L43&#34;&gt;Redigo - Pool&lt;/a&gt;.
+其 L43 ～ L92 就给出了一个完整的 连接池 的正确打开方式。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func newPool(server, password string) *redis.Pool {
+      return &amp;amp;redis.Pool{
+          MaxIdle: 3,
+          IdleTimeout: 240 * time.Second,
+          Dial: func () (redis.Conn, error) {
+            c, err := redis.Dial(&amp;quot;tcp&amp;quot;, server)
+            if err != nil {
+                return nil, err
+            }
+            if _, err := c.Do(&amp;quot;AUTH&amp;quot;, password); err != nil {
+                c.Close()
+                return nil, err
+              }
+               return c, err
+          },
+          TestOnBorrow: func(c redis.Conn, t time.Time) error {
+              _, err := c.Do(&amp;quot;PING&amp;quot;)
+              return err
+          },
+      }
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这段简单易懂的代码返回了一个可用的 Redis 连接池，为了能够进行长连接处理，我们还需要定义一个全局的 &lt;strong&gt;redis.Pool&lt;/strong&gt; 变量进行使用。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;  var (
+      pool *redis.Pool
+      redisServer = flag.String(&amp;quot;redisServer&amp;quot;, &amp;quot;:6379&amp;quot;, &amp;quot;&amp;quot;)
+      redisPassword = flag.String(&amp;quot;redisPassword&amp;quot;, &amp;quot;&amp;quot;, &amp;quot;&amp;quot;)
+  )
+
+  func main() {
+      flag.Parse()
+      pool = newPool(*redisServer, *redisPassword)
+      ...
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当 &lt;strong&gt;request请求&lt;/strong&gt; 来到，我们就可以这样进行获取连接，并且一定记得在使用完毕之后将连接放回连接池。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;   func serveHome(w http.ResponseWriter, r *http.Request) {
+       conn := pool.Get()
+       defer conn.Close()
+       ....
+   }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;到了这里-一个可用并且高性能的-redis-数据库的连接已经基本构建完毕了&#34;&gt;到了这里，一个可用并且高性能的 Redis 数据库的连接已经基本构建完毕了！&lt;/h5&gt;
+
+&lt;h5 id=&#34;接下来就可以愉快地进行使用了&#34;&gt;接下来就可以愉快地进行使用了～&lt;/h5&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

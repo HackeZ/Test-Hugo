@@ -1,0 +1,161 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> redigo : open too many files &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>redigo : open too many files</h1>
+			  <span class="post-date">Wed, Jul 27, 2016</span>
+			      
+
+<h1 id="redigo-panic-error-open-too-many-files">Redigo - panic error : open too many files.</h1>
+
+<h3 id="abstract">Abstract</h3>
+
+<p>今天对 <a href="https://www.github.com/HackeZ/getAcFunPage">getAcFunPage</a> 项目做 Benchmark 的时候发现了 Redis 会频繁报一个 <code>socket: too many open files</code> 的错误，后来发现并不是代码的问题，而是 Linux 的设置问题。
+下面就来说说我是这么解决这个问题的。</p>
+
+<h3 id="problem">Problem</h3>
+
+<p>Benchmark 时报错内容截取如下：</p>
+
+<pre><code>http: panic serving 127.0.0.1:53512: dial tcp :6379: socket: too many open files
+goroutine 5322 [running]:
+net/http.(*conn).serve.func1(0xc820f87f80)
+    /usr/local/go/src/net/http/server.go:1389 +0xc1
+panic(0x797240, 0xc820b12050)
+    /usr/local/go/src/runtime/panic.go:426 +0x4e9
+main.GetPageAndJSON(0x0, 0x0)
+    /home/hackerzgz/workspace/golang/src/getAcFunPage/main.go:130 +0x20a
+main.HandleGetResp(0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /home/hackerzgz/workspace/golang/src/getAcFunPage/main.go:82 +0x18
+net/http.HandlerFunc.ServeHTTP(0x8902f0, 0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /usr/local/go/src/net/http/server.go:1618 +0x3a
+net/http.(*ServeMux).ServeHTTP(0xc820015740, 0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /usr/local/go/src/net/http/server.go:1910 +0x17d
+net/http.serverHandler.ServeHTTP(0xc82008a680, 0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /usr/local/go/src/net/http/server.go:2081 +0x19e
+net/http.(*conn).serve(0xc820f87f80)
+    /usr/local/go/src/net/http/server.go:1472 +0xf2e
+created by net/http.(*Server).Serve
+    /usr/local/go/src/net/http/server.go:2137 +0x44e
+</code></pre>
+
+<p>出现这个错误的时候， <code>webbench</code> 的参数为 <code>-c 300 -t 60</code> ，也就是并发300个客户端访问并持续60s。</p>
+
+<p>由报错信息第一行中的 <code>dial tcp :6379</code> 很容易看出，这是由 Redis 所引起的错误。</p>
+
+<h3 id="why">Why</h3>
+
+<p>根据 <a href="http://stackoverflow.com/questions/19971968/go-golang-redis-too-many-open-files-error">Stack Overflow</a> 上的一个回答，这是由于 Linux 下设置的 <strong>文件描述符上限(file descriptors limit)</strong> 所引起的错误，在Ubuntu系统中，该值上限为 <strong>1024</strong> ，于是当 Redis 需要接收来自高并发所带来的连接请求时，连接数很有可能 <strong>超出文件描述符的上限值</strong> ，于是 Redis 就会报错了。</p>
+
+<blockquote>
+<p>文件描述符:<br />
+内核（kernel）利用文件描述符（file descriptor）来访问文件。文件描述符是非负整数。打开现存文件或新建文件时，内核会返回一个文件描述符。读写文件也需要使用文件描述符来指定待读写的文件。</p>
+</blockquote>
+
+<h3 id="solve">Solve</h3>
+
+<p>要解决这个问题也很简单，只需要将服务器系统的文件描述符上限修改成一个更大的值即可：</p>
+
+<pre><code class="language-shell">$ ulimit -n 99999
+</code></pre>
+
+<p>然后还需要对 Redigo 的连接池设置做出修改：</p>
+
+<pre><code class="language-go">return &amp;redis.Pool{
+		MaxIdle:     64,
+		IdleTimeout: 3 * time.Second,
+		MaxActive:   99999, // max number of connections
+		...
+}
+</code></pre>
+
+<p>编译，测试。终于不再报错了。</p>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

@@ -3,7 +3,7 @@
 <head>
   <link href="http://gmpg.org/xfn/11" rel="profile">
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
-  <meta name="generator" content="Hugo 0.14" />
+  <meta name="generator" content="Hugo 0.16" />
 
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
@@ -11,17 +11,43 @@
   <title> HackerZ - Blog &middot; HackerZ - Blog </title>
 
   
-  <link rel="stylesheet" href="http://localhost:1313/css/poole.css">
-  <link rel="stylesheet" href="http://localhost:1313/css/syntax.css">
-  <link rel="stylesheet" href="http://localhost:1313/css/hyde.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
 
   
   <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
   <link rel="shortcut icon" href="/favicon.png">
 
   
-  <link href="http://localhost:1313/index.xml" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+  <link href="http://hackez.github.io/index.xml" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
 </head>
 
 <body class="theme-base-08 ">
@@ -29,12 +55,12 @@
 <div class="sidebar">
   <div class="container sidebar-sticky">
   <div class="round-head">
-    <img src="http://localhost:1313/author-head.png" alt="HackerZ">
-    <p>HackerZ</p>
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
   </div>
 
     <div class="sidebar-about">
-      <a href="http://localhost:1313/"><h1>HackerZ - Blog</h1></a>
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
       <p class="lead">
        Welcome to my personal Blog 
       </p>
@@ -43,7 +69,11 @@
     <ul class="sidebar-nav">
       <li><a href="/">Home</a> </li>
       
-        <li><a href="/about/"> About </a></li>
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
       
     </ul>
 
@@ -58,22 +88,2470 @@
       
   <div class="post">
     <h1 class="post-title">
-      <a href="http://localhost:1313/welcome/">
-        你好，欢迎来到我的Blog
+      <a href="http://hackez.github.io/circuitbreaker/">
+        CircuitBreaker 设计模式
+      </a>
+    </h1>
+
+    <span class="post-date">Sun, Sep 25, 2016</span>
+
+    
+
+<h2 id="intro">Intro</h2>
+
+<p>今天发现了 <a href="https://github.com/sony/">Sony</a> 竟然在 Github 上开源了他们的一些项目！而他们也是在用 <code>Golang</code> 在开发后台！</p>
+
+<p><strong>Amazing</strong></p>
+
+<p>于是不亦乐乎地看起了其中的 Golang 开源项目，而其中一个名为 <a href="https://github.com/sony/gobreaker">sony/gobreaker</a> 的项目引起了我的注意。</p>
+
+<p>项目简述中描述了这是一个 Golang 版本的 <strong>CircuitBreaker</strong> 实现！</p>
+
+<p>那么什么是 <strong>CircuitBreaker（断路器）</strong> 呢？下面就来一起看看。</p>
+
+<h2 id="what-is-circuitbreaker">What is CircuitBreaker</h2>
+
+<p>根据传统的解释，断路器是广泛用于 <em>电子工程产业</em> 的一个重要安全保障！</p>
+
+<p>当你家里的洗衣机漏电了，电流就会瞬间增大，那么连接家里总线的 <strong>断路器</strong> 就会剩下，及时切断总电源，防止意外的发生！</p>
+
+<p>那么在最近的 <code>微服务</code> 越来越流行的时代，软件架构开始将 <strong>断路器</strong> 这一概念添加进来了。</p>
+
+<p>我们知道，当你一旦开始将系统中的一部分拆解为一个独立服务，那么你就已经走进了 <code>微服务</code> 的时代了。
+而在微服务中最重要的是要保证服务运行的稳定性，如果独立服务无法提供高质量或者是不能提供服务，那么这将会导致整个系统的崩溃！</p>
+
+<p>而 <code>微服务</code> 会遇到的故障有可能是：
+    - 瞬时故障：如慢的网络连接、超时，资源过度使用而暂时不可用；
+    - 不容易预见的突发故障：需要更长时间来纠正的故障；</p>
+
+<p>而解决这些故障常常有两种方法：
+    - 重试机制：对于预期的短暂故障问题，通过重试模式是可以解决的；
+    - 断路器（CircuitBreaker）模式：将受保护的服务封装在一个可以监控故障的断路器对象中，当故障达到一定门限，断路器将跳闸（trip），所有后继调用将不会发往受保护的服务而由断路器对象之间返回错误。对于需要更长时间解决的故障问题，不断重试就没有太大意义了，可以使用断路器模式。</p>
+
+<p><img src="http://martinfowler.com/bliki/images/circuitBreaker/sketch.png?_=0.814744712175792" alt="CircuitBreaker - Sketch" /></p>
+
+<p><img src="http://martinfowler.com/bliki/images/circuitBreaker/state.png?_=0.47541342622693494" alt="CircuitBreaker - State" /></p>
+
+<h2 id="action-in-gobreaker">Action in gobreaker</h2>
+
+<p>简单介绍完 CircuitBreaker 的概念，那么接下来就结合 <a href="https://github.com/sony/gobreaker">gobreaker</a> 的源码实际看看如何设计一个 断触器。</p>
+
+<p>首先一个值得我们关注的点是 CircuitBreaker State， 它被设计为 <strong>3</strong> 种状态：</p>
+
+<pre><code class="language-go">type State int
+const (
+    StateClosed State = iota
+    StateHalfOpen
+    StateOpen
+)
+</code></pre>
+
+<p>CircuitBreaker 会根据当前处于不同的 <code>State</code> ，而判断最多可以通过多少个 <code>Request</code> 。</p>
+
+<p>接下来是 <code>Setting</code> ，通过 Setting 对象的值，可以新建出一个 CircuitBreaker ：</p>
+
+<pre><code class="language-go">type Settings struct {
+	Name          string  // CircuitBreaker 的名字
+	MaxRequests   uint32  // 最大连接数，根据 State 会自动调节允许通过的 Request 值
+	Interval      time.Duration // 当 CircuitBreaker 处于 Close 状态的时候，循环该时间段，清空连接数
+	Timeout       time.Duration // 当 CircuitBreaker 处于 Open 状态的时候，如果触发了该超时时间，将它置为 Half-Open
+	ReadyToTrip   func(counts Counts) bool // 判断当前失败数，是否应该进入 Close 状态
+	OnStateChange func(name string, from State, to State) // 当状态发生变化时候，触发该函数
+}
+
+func NewCircuitBreaker(st Settings) *CircuitBreaker {
+    ...
+}
+</code></pre>
+
+<p>因为这个源码实现其实非常简单，我也就不一一讲诉了，就再将一个比较重要的函数 <code>Execute</code> 吧：</p>
+
+<pre><code class="language-go">func (cb *CircuitBreaker) Execute(req func() (interface{}, error)) (interface{}, error) {
+	generation, err := cb.beforeRequest()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		e := recover()
+		if e != nil {
+			cb.afterRequest(generation, fmt.Errorf(&quot;panic in request&quot;))
+			panic(e)
+		}
+	}()
+
+	result, err := req()
+	cb.afterRequest(generation, err)
+	return result, err
+}
+</code></pre>
+
+<p>该函数用于执行需要 CircuitBreaker 触发的函数，详情可以参考这里 =&gt; <a href="https://github.com/sony/gobreaker/blob/master/example/http_breaker.go">example</a></p>
+
+<p>首先执行 CircuitBreaker 的 beforeRequest，然后执行传进来的 req 函数，最后执行 afterRequest ，并捕获异常，如果有异常， recover 它，不停止程序，返回错误信息。</p>
+
+<h2 id="参考网站">参考网站</h2>
+
+<p><a href="http://blog.sina.com.cn/s/blog_72ef7bea0102vvsn.html">mryqu - blog</a></p>
+
+<p><a href="http://www.cnblogs.com/davidwang456/p/3976607.html">English</a></p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/tcpdump-in-action/">
+        tcpdump in Action
+      </a>
+    </h1>
+
+    <span class="post-date">Fri, Sep 16, 2016</span>
+
+    
+
+<h2 id="intro">Intro</h2>
+
+<p>昨天上线了新完成的网站 <a href="http://123.207.0.81:8563">Personal-Dictionary</a> <a href="https://www.github.com/HackeZ/Personal-Dictionary">源码在此</a></p>
+
+<p>但是上线期间却发生网站从 <a href="http://127.0.0.1:8563">http://127.0.0.1:8563</a> 可以访问，但是外网访问却显示 <code>“无法访问此网络”</code> 的情况，最后通过分析抓包工具 <code>tcpdump</code> 的结果解决了该问题。</p>
+
+<h2 id="problem">Problem</h2>
+
+<p>这是一个 <code>Beego</code> 应用，按理来说只要编译出二进制文件，然后将静态文件和二进制文件发送到服务器端，然后运行该二进制文件即可。</p>
+
+<p>编译 Linux OS 下可执行文件的命令为</p>
+
+<p><code>$ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o PD main.go</code></p>
+
+<p>编译完成之后， 通过 <code>$ scp PD root@123.207.0.81:/home/...</code> 将文件上传至服务器。</p>
+
+<p>使用 <code>$ nohup ./PD &amp;</code> 即可将该应用以后台服务的形式运行在服务器中。</p>
+
+<p>但是问题出现了，通过外网的 IP 地址访问该 应用的端口地址却提示 <code>“无法访问此网络”</code> 的情况， 然后我使用 <code>$ curl http://127.0.0.1:8563</code> 却能直接返回网页内容！</p>
+
+<h2 id="slove">Slove</h2>
+
+<p>为了解决这个问题，我最先想到的就是该端口是否被外网的中间件屏蔽了呢。有一个最直观的方法可以观察检查该情况，就是使用 <code>tcpdump</code> 抓包工具！</p>
+
+<p>在服务器端启动应用之后，使用 <code>$ tcpdump 网卡[eth0, lo] tcp port 8563 host 123.207.0.81</code></p>
+
+<p>去截获访问该应用的端口 TCP 包，然后通过浏览器访问 <a href="http://123.207.0.81:8563">http://123.207.0.81:8563</a> 测试 TCP 包是否能正确到达 服务器的该端口。</p>
+
+<p>结果 tcpdump 截获到的结果可以简化为</p>
+
+<pre><code>.... [S]
+.... [R.]
+.... [S]
+.... [R.]
+.... [S]
+.... [R.]
+</code></pre>
+
+<p>很明显了：
+    - <code>S</code> 代表着 <code>SEND</code>
+    - <code>R</code> 代表着 <code>RST</code></p>
+
+<p>浏览器试图访问该端口，然后服务器直接就 RST 掉该请求，这样的情况下很可能就是该端口没有被打开！</p>
+
+<p>关于更多的 RST 情况我推荐一篇 Blog —— <a href="https://my.oschina.net/costaxu/blog/127394">costaxu</a></p>
+
+<p>根据上面的情况，我很快就能定位到问题所在：</p>
+
+<pre><code class="language-go">// main.go
+func main() {
+    beego.Run(&quot;127.0.0.1&quot;+beego.AppConfig.String(&quot;httpport&quot;)) // 这里只指定了内网的服务地址...
+}
+</code></pre>
+
+<p>最后，只需要将 <code>beego.Run()</code> 替换掉上面的即可解决。</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/protocol-buffers/">
+        Action in Protocol Buffers
+      </a>
+    </h1>
+
+    <span class="post-date">Fri, Sep 9, 2016</span>
+
+    
+
+<h2 id="intro">Intro</h2>
+
+<p>如果要介绍 <code>Protocol Buffers</code> 那么首先要从 RPC 说起，而熟悉分布式的同学应该都知道 RPC 吧，我简单介绍一下：</p>
+
+<blockquote>
+<p>PRC 也就是 Remote Procedure Call Protocol (远程调用协议)，也就是说当有 A, B 两台服务器，A 服务器 中可以通过 RPC 调用 B服务器 中的函数。</p>
+</blockquote>
+
+<p>在微服务和分布式变得越来越流行的今天，了解和学会 RPC 这个协议无疑是首要任务。</p>
+
+<h2 id="protocol-buffers">Protocol Buffers</h2>
+
+<p>那么 RPC 只是一个应用层协议，可以由不同的框架实现，而不同框架所支持的传输数据格式可以有很多：</p>
+
+<ul>
+<li>JSON</li>
+<li>Gob</li>
+<li>MessagePack</li>
+<li>Protocol Buffers &hellip;</li>
+</ul>
+
+<p>那么可以说 <code>Protocol Buffers</code> 是这些所被支持的传输数据中比较高效而且通用的一种，其 <a href="https://developers.google.com/protocol-buffers/">官网</a> 就列举出如：</p>
+
+<ul>
+<li>C++</li>
+<li>C#</li>
+<li>Go</li>
+<li>Java</li>
+<li>Python</li>
+</ul>
+
+<p>的使用指南，而更多的如 <code>Ruby</code> <code>JavaNano</code> 等也可以被支持。</p>
+
+<h2 id="install-in-go">Install in Go</h2>
+
+<p>在 Go 中，我们可以直接使用 <code>protoc-gen-go</code> 这个工具由 <code>.proto</code> 模版文件直接生成可用的 <code>.go</code> 文件。</p>
+
+<p>安装方法：</p>
+
+<ol>
+<li><p>首先需要下载 <code>Protobuf</code> 的编译器 <a href="https://github.com/google/protobuf/releases">protoc</a> ，你可以下载一个对应系统版本的二进制版本，然后解压缩之后会在 <code>bin</code> 文件夹下找到编译好的可执行文件。</p></li>
+
+<li><p>然后需要安装 <code>protoc-gen-go</code> 插件和编解码支持库。</p></li>
+</ol>
+
+<pre><code class="language-shell"># 插件安装
+$ go get github.com/golang/protobuf/protoc-gen-go
+$ cd $\
+GOPATH/src/github.com/golang/protobuf/protoc-gen-go
+$ go build &amp;&amp; go install
+
+# 编解码支持库
+$ go get github.com/golang/protobuf/proto
+$ cd $\
+GOPATH/src/github.com/golang/golang/protobuf/proto
+$ go build &amp;&amp; go install
+</code></pre>
+
+<p>最后还需要将 <code>$GOPAHTH/bin</code> <strong>加入环境变量</strong> ！</p>
+
+<ol>
+<li>安装完成之后，可以在测试文件夹里先新建一个 <code>.proto</code> 文件，往里面写入：</li>
+</ol>
+
+<pre><code class="language-go">syntax=&quot;proto2&quot;;
+package xx // 该文件所属包名
+
+enum FOO { X = 17; };
+
+message Test {
+    required string label = 1;
+    optional int32 type = 2 [default=77];
+    repeated int64 reps = 3;
+    optional group OptionalGroup = 4 {
+    required string RequiredField = 5;
+    }
+}
+</code></pre>
+
+<p>然后运行 <code>protoc -I='*.proto文件所处的文件夹' --go_out=. *.proto</code> 即可生成以下内容：</p>
+
+<pre><code class="language-go">// Code generated by protoc-gen-go.
+// source: example/human.proto
+// DO NOT EDIT!
+
+/*
+Package example is a generated protocol buffer package.
+
+It is generated from these files:
+       	example/human.proto
+
+It has these top-level messages:
+       	Test
+*/
+package example
+
+import proto &quot;github.com/golang/protobuf/proto&quot;
+import fmt &quot;fmt&quot;
+import math &quot;math&quot;
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
+type FOO int32
+
+const (
+       	FOO_X FOO = 17
+)
+
+var FOO_name = map[int32]string{
+       	17: &quot;X&quot;,
+}
+var FOO_value = map[string]int32{
+       	&quot;X&quot;: 17,
+}
+
+func (x FOO) Enum() *FOO {
+       	p := new(FOO)
+       	*p = x
+       	return p
+}
+func (x FOO) String() string {
+       	return proto.EnumName(FOO_name, int32(x))
+}
+func (x *FOO) UnmarshalJSON(data []byte) error {
+       	value, err := proto.UnmarshalJSONEnum(FOO_value, data, &quot;FOO&quot;)
+       	if err != nil {
+       		return err
+       	}
+       	*x = FOO(value)
+       	return nil
+}
+func (FOO) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+type Test struct {
+       	Label            *string             `protobuf:&quot;bytes,1,req,name=label&quot; json:&quot;label,omitempty&quot;`
+       	Type             *int32              `protobuf:&quot;varint,2,opt,name=type,def=77&quot; json:&quot;type,omitempty&quot;`
+       	Reps             []int64             `protobuf:&quot;varint,3,rep,name=reps&quot; json:&quot;reps,omitempty&quot;`
+       	Optionalgroup    *Test_OptionalGroup `protobuf:&quot;group,4,opt,name=OptionalGroup,json=optionalgroup&quot; json:&quot;optionalgroup,omitempty&quot;`
+       	XXX_unrecognized []byte              `json:&quot;-&quot;`
+}
+
+func (m *Test) Reset()                    { *m = Test{} }
+func (m *Test) String() string            { return proto.CompactTextString(m) }
+func (*Test) ProtoMessage()               {}
+func (*Test) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+const Default_Test_Type int32 = 77
+
+func (m *Test) GetLabel() string {
+       	if m != nil &amp;&amp; m.Label != nil {
+       		return *m.Label
+       	}
+       	return &quot;&quot;
+}
+
+func (m *Test) GetType() int32 {
+       	if m != nil &amp;&amp; m.Type != nil {
+       		return *m.Type
+       	}
+       	return Default_Test_Type
+}
+
+func (m *Test) GetReps() []int64 {
+       	if m != nil {
+       		return m.Reps
+       	}
+       	return nil
+}
+
+func (m *Test) GetOptionalgroup() *Test_OptionalGroup {
+       	if m != nil {
+       		return m.Optionalgroup
+       	}
+       	return nil
+}
+
+type Test_OptionalGroup struct {
+       	RequiredField    *string `protobuf:&quot;bytes,5,req,name=RequiredField,json=requiredField&quot; json:&quot;RequiredField,omitempty&quot;`
+       	XXX_unrecognized []byte  `json:&quot;-&quot;`
+}
+
+func (m *Test_OptionalGroup) Reset()                    { *m = Test_OptionalGroup{} }
+func (m *Test_OptionalGroup) String() string            { return proto.CompactTextString(m) }
+func (*Test_OptionalGroup) ProtoMessage()               {}
+func (*Test_OptionalGroup) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
+
+func (m *Test_OptionalGroup) GetRequiredField() string {
+       	if m != nil &amp;&amp; m.RequiredField != nil {
+       		return *m.RequiredField
+       	}
+       	return &quot;&quot;
+}
+
+func init() {
+       	proto.RegisterType((*Test)(nil), &quot;example.Test&quot;)
+       	proto.RegisterType((*Test_OptionalGroup)(nil), &quot;example.Test.OptionalGroup&quot;)
+       	proto.RegisterEnum(&quot;example.FOO&quot;, FOO_name, FOO_value)
+}
+
+func init() { proto.RegisterFile(&quot;example/human.proto&quot;, fileDescriptor0) }
+
+var fileDescriptor0 = []byte{
+       	// 200 bytes of a gzipped FileDescriptorProto
+       	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x4e, 0xad, 0x48, 0xcc,
+       	0x2d, 0xc8, 0x49, 0xd5, 0xcf, 0x28, 0xcd, 0x4d, 0xcc, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17,
+       	0x62, 0x87, 0x0a, 0x2a, 0x1d, 0x62, 0xe4, 0x62, 0x09, 0x49, 0x2d, 0x2e, 0x11, 0x12, 0xe1, 0x62,
+       	0xcd, 0x49, 0x4c, 0x4a, 0xcd, 0x91, 0x60, 0x54, 0x60, 0xd2, 0xe0, 0x0c, 0x82, 0x70, 0x84, 0xc4,
+       	0xb8, 0x58, 0x4a, 0x2a, 0x0b, 0x52, 0x25, 0x98, 0x14, 0x18, 0x35, 0x58, 0xad, 0x98, 0xcc, 0xcd,
+       	0x83, 0xc0, 0x7c, 0x21, 0x21, 0x2e, 0x96, 0xa2, 0xd4, 0x82, 0x62, 0x09, 0x66, 0x05, 0x66, 0x0d,
+       	0xe6, 0x20, 0x30, 0x5b, 0xc8, 0x91, 0x8b, 0x37, 0xbf, 0xa0, 0x24, 0x33, 0x3f, 0x2f, 0x31, 0x27,
+       	0xbd, 0x28, 0xbf, 0xb4, 0x40, 0x82, 0x45, 0x81, 0x51, 0x83, 0xcb, 0x48, 0x5a, 0x0f, 0x6a, 0x97,
+       	0x1e, 0xc8, 0x1e, 0x3d, 0x7f, 0xa8, 0x12, 0x77, 0x90, 0x92, 0x20, 0x54, 0x1d, 0x52, 0xa6, 0x5c,
+       	0xbc, 0x28, 0xf2, 0x42, 0x2a, 0x5c, 0xbc, 0x41, 0xa9, 0x85, 0xa5, 0x99, 0x45, 0xa9, 0x29, 0x6e,
+       	0x99, 0xa9, 0x39, 0x29, 0x12, 0xac, 0x60, 0xd7, 0xf1, 0x16, 0x21, 0x0b, 0x6a, 0xf1, 0x70, 0x31,
+       	0xbb, 0xf9, 0xfb, 0x0b, 0xb1, 0x72, 0x31, 0x46, 0x08, 0x08, 0x02, 0x02, 0x00, 0x00, 0xff, 0xff,
+       	0x89, 0x47, 0xa8, 0x4e, 0xf1, 0x00, 0x00, 0x00,
+}
+</code></pre>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/how2use-captcha-in-beego/">
+        How to Use Captcha in Beego Correct
+      </a>
+    </h1>
+
+    <span class="post-date">Thu, Sep 1, 2016</span>
+
+    
+
+<h2 id="intro">Intro</h2>
+
+<p>最近在做 Beego 的 Web 网站开发，主题是 <code>个人词典</code> ，项目地址 <a href="https://github.com/HackeZ/Personal-Dictionary">点我</a> 。
+在关于 Beego 的验证码使用方法上出现了问题，后面通过阅读 Beego 的源码解决了该问题，下面来详细讲诉一下。</p>
+
+<h2 id="problem">Problem</h2>
+
+<p>先来看看错误的代码吧</p>
+
+<pre><code class="language-go">// ...
+var cpt *captcha.Captcha
+
+func (c *MainController) Login () {
+    // ...
+    // Get Verification Code.
+    store = cache.NewMemoryCache()
+    cpt = captcha.NewWithFilter(&quot;/captcha/&quot;, store)
+	cpt.ChallengeNums, _ = beego.AppConfig.Int(&quot;captcha_length&quot;)
+	cpt.StdWidth = 100
+	cpt.StdHeight = 42
+
+    c.TplName = &quot;login.tpl&quot;
+}
+</code></pre>
+
+<p>这样写出现的问题是，开启服务器之后，只有第一次输入的验证码是正确的，一旦刷新页面或者已经登录之后，无论再次怎么进行登录都是 <code>验证码不正确</code> 的错误。
+甚至在很多情况下都会出现验证码图片显示不出来。</p>
+
+<h2 id="solve">Solve</h2>
+
+<p>其实很容易就可以想到是 Cache 模块而导致的问题，因为 Beego 的 Memory Cache 从源代码中看其实就是一个存放在内存的 <code>Map</code> ，而且该 <code>Map</code> 是带生存周期的。所以应该将 <code>Cache</code> 设置为一个全局变量，那么才能可以让 <code>Captcha</code> 每次都能到正确的内存地址中的 Map 存取数据。而不是每次访问都新建一次 <code>Cache</code> 。</p>
+
+<p>正确的用法如下：</p>
+
+<pre><code class="language-go">// ...
+var cpt *captcha.Captcha
+var store cache.Cache
+
+func (c *MainController) Login () {
+    // ...
+    // Get Verification Code.
+    cpt = captcha.NewWithFilter(&quot;/captcha/&quot;, store)
+	cpt.ChallengeNums, _ = beego.AppConfig.Int(&quot;captcha_length&quot;)
+	cpt.StdWidth = 100
+	cpt.StdHeight = 42
+
+    c.TplName = &quot;login.tpl&quot;
+}
+
+func init() {
+    store = cache.NewMemoryCache()
+}
+</code></pre>
+
+<p>这样，无论是怎么折腾该验证码， <code>Captcha</code> 都能到正确的 <code>Map</code> 中进行操作，一切的问题都解决了。</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/fun-in-docker-2/">
+        Fun in Docker Day-2
+      </a>
+    </h1>
+
+    <span class="post-date">Wed, Aug 31, 2016</span>
+
+    
+
+<h2 id="intro">Intro</h2>
+
+<p>今天来详细讲一下之前没有讲清楚的 Docker 镜像打包方法。</p>
+
+<h2 id="page-command">Page Command</h2>
+
+<p>我们都知道，打包 Docker 应用有两种方式：</p>
+
+<ol>
+<li>在已经存在的 images 中 commit 修改。</li>
+<li>创建一个全新的 images 。</li>
+</ol>
+
+<p>这两种方法各有优缺点。下面都来说一下怎么进行操作。</p>
+
+<h2 id="way-one">Way One</h2>
+
+<p>在已有的 images 中修改并 commit</p>
+
+<ul>
+<li>优点：
+
+<ul>
+<li>这是最方便快捷的方法</li>
+<li>可以避免自己打包而导致出现的一些问题，如静态文件引用错误等</li>
+</ul></li>
+<li>缺点：
+
+<ul>
+<li>可定制程度低</li>
+<li>打包出来的镜像文件可能会很大，不利于存储</li>
+</ul></li>
+</ul>
+
+<p>在 Docker 官网的文档中已经很详细操作过了，下面的是我翻译的版本。具体的官方英文<a href="https://docs.docker.com/engine/tutorials/dockerimages/#/updating-and-committing-an-image">点我</a></p>
+
+<p>首先你需要一个 images 才能进行更新操作呀，所以首先：</p>
+
+<pre><code class="language-shell">#   获取 images
+$ docker pull training/sinatra
+#   运行 images 并进入到命令行中
+$ docker run -t -i training/sinatra /bin/bash
+root@0b2616b0e5a8:/#
+</code></pre>
+
+<blockquote>
+<p>记住这个被创建容器的 ID， <code>0b2616b0e5a8</code> ，一会你会用得上的。</p>
+</blockquote>
+
+<p>接上面的操作&hellip;</p>
+
+<pre><code class="language-shell">#   首先更新一下 Ruby
+root@0b2616b0e5a8:/# apt-get install -y ruby2.0-dev
+#   然后安装  gem  json
+root@0b2616b0e5a8:/# gem2.0 install json
+</code></pre>
+
+<p>完成了这些更改之后，你可以运行 <code>exit</code> 命令退出。</p>
+
+<p>现在你可以像使用 <code>git</code> 一样更新这个镜像了：</p>
+
+<pre><code class="language-shell">#   '-m' '-a' 这些看起来很熟悉啦，和 git 中是一样的，就不再说了...
+$ docker commit -m &quot;Added json gem&quot; -a &quot;Kate Smith&quot; \
+0b2616b0e5a8 ouruser/sinatra:v2
+
+4f177bd27a9ff0f6dc2a830403925b5360bfe0b93d476f7fc3231110e7f71b1c
+</code></pre>
+
+<p>然后运行一下 <code>docker images</code> 来看看新创建的容器吧</p>
+
+<pre><code class="language-shell">$ docker images
+
+REPOSITORY          TAG     IMAGE ID       CREATED       SIZE
+training/sinatra    latest  5bc342fa0b91   10 hours ago  446.7 MB
+ouruser/sinatra     v2      3c59e02ddd1a   10 hours ago  446.7 MB
+ouruser/sinatra     latest  5db5f8471261   10 hours ago  446.7 MB
+</code></pre>
+
+<h2 id="way-two">Way Two</h2>
+
+<p>完全创建一个新的 images 是很多人第一时间就想做的，但是官网简介中并没有太多详细标注的细节，那么我就以我的第一视角讲诉一下我是怎么创建一个全新的  images 的。</p>
+
+<p>依然是 Go ，首先创建一个简单的读取文件内容的项目：</p>
+
+<pre><code class="language-shell">$ cd $GOPATH/src
+$ mkdir File_Reader
+$ vim File_Reader/main.go
+</code></pre>
+
+<p>源代码如下：</p>
+
+<pre><code class="language-go">package main
+
+import (
+	&quot;bufio&quot;
+	&quot;fmt&quot;
+	&quot;io&quot;
+	&quot;log&quot;
+	&quot;os&quot;
+)
+
+func main() {
+	file, err := os.OpenFile(&quot;./file.txt&quot;, os.O_RDONLY, os.ModePerm)
+	defer file.Close()
+
+	if err != nil {
+		log.Println(&quot;file.txt open false!&quot;)
+	}
+
+	fileReader := bufio.NewReader(file)
+
+	for {
+		line, err := fileReader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Println(&quot;Read File Content Failed!&quot;, err.Error())
+			return
+		}
+		fmt.Println(line)
+	}
+
+	fmt.Println(&quot;File Read Done!&quot;)
+}
+</code></pre>
+
+<p>接下来就是在当前目录下创建一个 <code>file.txt</code> ，然后输入你想要的内容进去。</p>
+
+<pre><code class="language-shell">$ &quot;xxxxxx&quot; &gt;&gt; file.txt
+</code></pre>
+
+<p>接下来就需要先将源代码文件编译成二进制文件，因为如果我们希望这个 images 越小，越少的编译环境可以达到更好的效果。
+命令如之前一样：</p>
+
+<pre><code class="language-shell">$ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+</code></pre>
+
+<p>然后你可以看到当前目录下出现了一个 <code>main</code> 的可执行文件。</p>
+
+<p>重要的步骤来了，当前目录下创建一个 <code>Dockerfile</code> 文件，输入如下内容：</p>
+
+<pre><code>FROM scratch
+MAINTAINER HackerZ
+ADD main /
+ADD file.txt /
+CMD [&quot;/main&quot;]
+</code></pre>
+
+<p>我来解释一下这些都是什么意思：</p>
+
+<ul>
+<li>FROM : Docker 用来指定该镜像是基于哪个基础镜像构建的</li>
+<li>MAINTAINER : 镜像创建人的名字</li>
+<li>ADD  : 从 Dockerfile 所在目录拷贝文件到指定路径下</li>
+<li>CMD  : 用来指示当运行 <code>docker run</code> 命令运行该镜像时要执行的命令</li>
+</ul>
+
+<p>其余的还有：</p>
+
+<ul>
+<li>EXPOSE : 开放的网络端口号</li>
+<li>ENV    : 设置环境变量</li>
+<li>VOLUME : 可以将本地文件夹或者其他容器的文件夹挂载到该容器中。</li>
+<li>WORKDIR: 切换目录用，可以多次切换(相当于cd命令)，对RUN,CMD,ENTRYPOINT生效</li>
+<li>ONBUILD: ONBUILD 指定的命令在构建镜像时并不执行，而是在它的子镜像中执行</li>
+</ul>
+
+<p>好了，运行 <code>docker build -t fileReader .</code> 创建全新的 images 吧。</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/fun-in-docker-1/">
+        Fun in Docker Day-1
+      </a>
+    </h1>
+
+    <span class="post-date">Sat, Aug 20, 2016</span>
+
+    
+
+<h2 id="intro">Intro</h2>
+
+<p>今天心血来潮，想在 OSX 中重新体验一下 <code>Docker</code>，结果因为 <code>Docker</code> 是基于 <code>Linux</code>，在 OSX 中实在是 Fun 不起来，于是便纪录下来这天的过程。</p>
+
+<h2 id="install">Install</h2>
+
+<p>这部分没什么好说的， <code>Docker</code> 官方已经出了 <a href="https://docs.docker.com/docker-for-mac/">OSX</a> 的安装包，直接下载拖进 <code>Application/</code> 即可完成安装。</p>
+
+<p>安装完成之后，可以直接在命令行中运行：</p>
+
+<pre><code class="language-shell">$ docker --version  # Docker 主体
+$ docker-compose --version  # 定义和管理复杂 Docker 应用的工具
+$ docker-machine --version  # 简化 Docker 安装的工具
+</code></pre>
+
+<p>查看所有的安装工具是否能够正确启动。</p>
+
+<p>之后，便可以尝试运行 <code>Hello World</code> 和 <code>nginx</code> 玩一下了。</p>
+
+<pre><code class="language-shell"># Hello World
+$ docker run hello-world
+
+# nginx
+$ docker run -d -p 80:80 --name webserver nginx
+</code></pre>
+
+<h2 id="package">Package</h2>
+
+<p>以我的开源项目 <a href="https://www.github.com/HackeZ/getMeizi">getMeizi</a> 为例子尝试打包 <code>Golang应用</code> 。</p>
+
+<h4 id="first-try">First Try</h4>
+
+<p>首先我在项目的根目录下编写了一个 <code>Dockerfile</code> 文件，其内容为：</p>
+
+<pre><code>FROM golang:onbuild
+</code></pre>
+
+<p>然后通过 <code>$ docker build -t getmeizi .</code> 来构建一个镜像。</p>
+
+<p>但是这样构建的镜像会将 <code>Golang</code> 的整个环境都打包进去，生成的镜像大小为 <code>832.5 MB</code> 。</p>
+
+<p>很显然我们会更加愿意得到一个更灵活小巧的镜像，于是，我的目光转向了 <code>scratch</code> 。</p>
+
+<h4 id="second-try">Second Try</h4>
+
+<p>修改 <code>Dockerfile</code> 文件内容为：</p>
+
+<pre><code>FROM scratch
+ADD main /
+CMD [&quot;/main&quot;]
+</code></pre>
+
+<p>然后先将 <code>getMeizi</code> 应用编译完：</p>
+
+<pre><code>$ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+</code></pre>
+
+<p>最后使用 <code>$ docker build -t getmeizi .</code></p>
+
+<p>构建即可生成一个仅有 <code>5.83 MB</code> 大小的镜像。</p>
+
+<h2 id="push">Push</h2>
+
+<p>最后将打包好的镜像发布到 <strong>Docker.io</strong> 中：</p>
+
+<pre><code class="language-shell">$ docker images
+# REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+# getmeizi            latest              7ddcbed63a17        2 minutes ago         5.839 MB
+
+$ docker tag 7ddcbed63a17 hackerz/getmeizi
+
+$ docker images
+# REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+# getmeizi            latest              7ddcbed63a17        3 minutes ago         5.839 MB
+# hackerz/getmeizi    latest              7ddcbed63a17        3 minutes ago         5.839 MB
+
+$ docker login
+# ***
+# Login Succeeded
+
+$ docker push hackerz/getmeizi
+</code></pre>
+
+<p>打开 <a href="https://hub.docker.com/r/hackerz/getmeizi/">hackerz/getmeizi</a> 查看并编辑镜像描述。</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/global_gitignore/">
+        Global Ignore File in Git
+      </a>
+    </h1>
+
+    <span class="post-date">Thu, Aug 18, 2016</span>
+
+    
+
+<h2 id="intro">Intro</h2>
+
+<p>自从换了 OSX 进行开发，就发现每当修改了项目文件， OSX 在项目目录都会生成一个 <code>.DS_Store</code> 的隐藏文件，该文件用于记录当前目录下文件的 Meta 信息。</p>
+
+<p>对于这样的情况，我不可能在每个项目的根目录都配置一个 <code>.gitignore</code> 文件，这样可复用性太地了，于是我便想能不能配置一个 Git 的 <code>.gitignore_global</code> 文件，统一忽略掉所有我不需要上传的文件呢。</p>
+
+<h2 id="solve">Solve</h2>
+
+<p>Git 还真有这样的方法，它提供了一个 <strong>忽略规则</strong> ，我们可以通过编写一个忽略规则文件，然后通过如下的命令配置进 Git :</p>
+
+<pre><code class="language-shell">$ git config --global core.excludesfile '忽略文件完整路径'
+</code></pre>
+
+<p>即可。</p>
+
+<h2 id="global-gitignore">Global GitIgnore</h2>
+
+<p>新建一个 <code>.gitignore_global</code> 文件，并往里面编写忽略文件语法，该语法符合正则表达式， <code>#</code> 号为注释，每一行为一个忽略规则：</p>
+
+<pre><code class="language-shell"># OSX
+.DS_Store
+.DS_Store*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python
+*.pyc
+
+# C
+*.[ao]
+
+# Package
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+</code></pre>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/how-2-install-scikit-learn/">
+        How To Install Scikit-learn Under OSX 10.11
+      </a>
+    </h1>
+
+    <span class="post-date">Mon, Aug 15, 2016</span>
+
+    
+
+<h1 id="如何在osx下安装正确安装-scikit-learn">如何在osx下安装正确安装 scikit-learn</h1>
+
+<h3 id="使用-anaconda">使用 Anaconda</h3>
+
+<p><code>Anaconda</code> 是一个 Python 的集成科学计算环境，一键安装，方便好用。但是当我安装之后发现其只有自带了：</p>
+
+<ul>
+<li>numpy</li>
+<li>scipy</li>
+</ul>
+
+<p>而并没有 <code>scikit-learn</code>，然后当我使用</p>
+
+<pre><code class="language-shell">conda install scikit-learn
+</code></pre>
+
+<p>进行安装之后发现还是无法使用这个缺省的库，经我多方查找资料，原来是 <code>Mac 10.11</code> 版本中自带的 <code>Python 2.7</code> 环境与 <code>Anaconda</code> 的环境是分离的，所以只能 <code>Anaconda</code> 中使用这些库。</p>
+
+<p>然而这是我不太喜欢的一种方式，所以我放弃了，转而研究在 <code>Mac</code> 自带的 Python 环境中安装。</p>
+
+<h3 id="解除-osx-10-11-的-sip-限制">解除 OSX 10.11 的 ｀SIP｀ 限制</h3>
+
+<p>当我开始用 <code>pip</code> 安装第三方包的时候出现了如下的错误：</p>
+
+<pre><code class="language-shell">Collecting numpy
+
+Using cached numpy-1.10.2-cp27-none-macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.whlInstalling
+ collected packages: numpy
+ Found existing installation: numpy 1.8.0rc1
+ DEPRECATION: Uninstalling a distutils installed project (numpy) has been deprecated and will be removed in a future version. This is due to the fact that uninstalling a distutils project will only partially uninstall the project.
+ Uninstalling numpy-1.8.0rc1:Exception:Traceback
+ (most recent call last):
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/basecommand.py&quot;, line 211, in main
+ status = self.run(options, args)
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/commands/install.py&quot;, line 311, in run
+ root=options.root_path,
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_set.py&quot;, line 640, in install
+ requirement.uninstall(auto_confirm=True)
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_install.py&quot;, line 716, in uninstall
+ paths_to_remove.remove(auto_confirm)
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_uninstall.py&quot;, line 125, in remove
+ renames(path, new_path)
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/utils/__init__.py&quot;,
+ line 315, in renames
+shutil.move(old, new)
+ File &quot;/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py&quot;, line 302, in move
+ copy2(src, real_dst)
+ File &quot;/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py&quot;, line 131, in copy2
+ copystat(src, dst)
+ File &quot;/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py&quot;, line 103, in copystat
+ os.chflags(dst, st.st_flags)OSError:
+ [Errno 1] Operation not permitted: '/var/folders/5n/vbm997m56xg3kw67y6bccn2m0000gn/T/pip-4tcBsd-uninstall/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy-1.8.0rc1-py2.7.egg-info'
+</code></pre>
+
+<p>仔细一看，发现了 <code>Operation not permitted</code> 的错误。</p>
+
+<p>经过 Google ，发现了原来是 Apple 经历了 <code>XCode编译器注入</code> 事件之后，提升了 <code>Mac OS X El Capitan系统</code> 的安全保护机制，加入了：</p>
+
+<blockquote>
+<p>System Integrity Protection (SIP)
+—— 系统完整性保护，其作用为强制性地保护系统相关的文件夹，开发者不能直接操作相关的文件内容。</p>
+</blockquote>
+
+<p>而 Python 库所在的路径为：</p>
+
+<pre><code class="language-shell">/System/Library/Frameworks/Python.framework/Versions/2.7/...
+</code></pre>
+
+<p>当然是属于其完整性保护的保护伞之下的，所以我需要把 <code>SIP</code> 关掉之后才能对其进行安装。</p>
+
+<p>引用外国大牛的关闭 SIP 的方法如下：</p>
+
+<ol>
+<li>Click the  menu.</li>
+<li>Select <code>Restart</code> …</li>
+<li>Hold down <code>command-R</code> to boot into the Recovery System.</li>
+<li>Click the <code>Utilities menu</code> and select <code>Terminal</code>.</li>
+<li>Type <code>csrutil disable</code> and press <code>return</code> .</li>
+<li>Close the <code>Terminal</code> app.</li>
+<li>Click the  menu and select <code>Restart</code> … .</li>
+</ol>
+
+<p>当然在安装完成之后最好还是将 SIP 重新打开：</p>
+
+<ol>
+<li>Click the  menu.</li>
+<li>Select <code>Restart</code> …</li>
+<li>Hold down <code>command-R</code> to boot into the Recovery System.</li>
+<li>Click the <code>Utilities menu</code> and select <code>Terminal</code>.</li>
+<li>Type <code>csrutil enable</code> and press <code>return</code> .</li>
+<li>Close the <code>Terminal</code> app.</li>
+<li>Click the  menu and select <code>Restart</code> … .</li>
+</ol>
+
+<h3 id="安装-scikit-learn-的正确姿势">安装 scikit-learn 的正确姿势</h3>
+
+<p>好吧，终于解决了上面这些问题了，安装应该没有问题了吧？很可惜，当我运行完：</p>
+
+<pre><code class="language-shell">$ sudo pip install numpy
+$ sudo pip install scipy
+$ sudo pip install scikit-learn
+</code></pre>
+
+<p>然后在 <code>Python</code> 下 <code>import sklearn</code> 时发生了如下错误：</p>
+
+<pre><code class="language-shell">Traceback (most recent call last):
+File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;
+File &quot;/Library/Python/2.7/site-packages/sklearn/__init__.py&quot;, line 57, in &lt;module&gt;
+from .base import clone
+File &quot;/Library/Python/2.7/site-packages/sklearn/base.py&quot;, line 11, in &lt;module&gt;
+from .utils.fixes import signature
+File &quot;/Library/Python/2.7/site-packages/sklearn/utils/__init__.py&quot;, line 10, in &lt;module&gt;
+from .murmurhash import murmurhash3_32
+File &quot;numpy.pxd&quot;, line 155, in init sklearn.utils.murmurhash (sklearn/utils/murmurhash.c:5029)
+ValueError: numpy.dtype has the wrong size, try recompiling
+</code></pre>
+
+<p>好惨，经过多方搜索，绝大部分的解答都是：</p>
+
+<pre><code class="language-shell">$ pip uninstall numpy scipy scikit-learn
+$ pip install numpy scipy scikit-learn
+</code></pre>
+
+<p>然而都并没有什么卵用，最后在这里找到了解决办法 =&gt; <a href="http://scikit-learn-general.narkive.com/kMA6mRCk/valueerror-numpy-dtype-has-the-wrong-size-try-recompiling">here</a></p>
+
+<p>其方法时不要使用 <code>pip install scikit-learn</code></p>
+
+<p>而是到 Github 中找到 <a href="https://github.com/scikit-learn/scikit-learn">scikit-learn</a> 项目进行安装：</p>
+
+<pre><code class="language-shell">$ git clone https://github.com/scikit-learn/scikit-learn.git
+$ sudo python setup.py install
+</code></pre>
+
+<p>等待几分钟，安装完成，大功告成～</p>
+
+<h3 id="参考网站">参考网站：</h3>
+
+<ul>
+<li>在 osx 10.11 下解除 pip 权限安装 =&gt; <a href="http://blog.csdn.net/shi_weihappy/article/details/50938486">参考地址</a></li>
+<li>如何正确安装scikit-learn =&gt; <a href="http://www.tuicool.com/articles/aEJriuY">参考地址</a></li>
+</ul>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/golang-package-dependency-management-tool/">
+        Golang Package Dependency Management Tool
+      </a>
+    </h1>
+
+    <span class="post-date">Sun, Aug 7, 2016</span>
+
+    
+
+<h1 id="golang-package-dependency-management-tool">Golang Package Dependency Management Tool</h1>
+
+<h2 id="intro">Intro</h2>
+
+<p>Golang一直以来被外界诟病的一个问题就是包的依赖管理问题。那么今天就来讲一个：</p>
+
+<blockquote>
+<p>Golang包依赖管理工具 —— gb</p>
+</blockquote>
+
+<p>gb 在其官网中定义自己为：</p>
+
+<blockquote>
+<p>A project based build tool for the Go programming language.</p>
+</blockquote>
+
+<p>一个Golang的项目工程通常由 <code>bin</code>、<code>pkg</code>、<code>src</code>三个子目录构成：</p>
+
+<ul>
+<li>bin : 存放编译后生成的可执行文件</li>
+<li>pkg : 编译后生成的文件（如：.a）</li>
+<li>src : 存放源代码（如：.go .c .h .s等）</li>
+</ul>
+
+<p>而 <code>gb</code> 在这个概念的基础上新增了一个 <code>vendor</code> 目录来存放项目依赖的第三方包（如 <em>beego</em> ，<em>gracehttp</em> 等）</p>
+
+<h2 id="gb-action">gb action</h2>
+
+<h4 id="install">Install</h4>
+
+<p>gb ==&gt; <a href="https://getgb.io/">首页</a>  ==&gt;  <a href="https://github.com/constabulary/gb/">Github</a></p>
+
+<p>根据说明，使用</p>
+
+<pre><code class="language-shell">$ go get github.com/constabulary/gb/...
+</code></pre>
+
+<p>命令即可安装 gb。</p>
+
+<p>当该命令运行完毕，请检查 <code>env</code> 下的第一个 <code>$GOPATH</code> 的 <code>bin</code> 目录下是否生成了 <code>gb</code> 以及 <code>gb-vendor</code> 两个可执行文件。</p>
+
+<blockquote>
+<p>如安装报错，请检查你是否正确配置了 $GOPATH 等环境变量。</p>
+</blockquote>
+
+<h4 id="use">Use</h4>
+
+<p>下面试着使用 <code>gb</code> 来构建一个基于第三方包 <code>gracehttp</code> 的简易 Golang Web 项目，来体验一下 <code>gb</code> 的魅力。</p>
+
+<p>首先初始化 <code>hellogb</code> 项目目录结构：</p>
+
+<pre><code class="language-shell">$ cd $GOPATH/src/hellogb
+$ mkdir -p src/hellogb
+$ mkdir -p vendor/src
+</code></pre>
+
+<p>编写 Web 程序：</p>
+
+<pre><code class="language-go">// vim src/hellogb/main.go
+package main
+
+import (
+    &quot;fmt&quot;
+    &quot;net/http&quot;
+
+    &quot;github.com/tabalt/gracehttp&quot;
+)
+
+func main() {
+    http.HandleFunc(&quot;/&quot;, func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, &quot;hello gb&quot;)
+    })
+
+    err := gracehttp.ListenAndServe(&quot;:8080&quot;, nil)
+    if err != nil {
+        fmt.Println(err)
+    }
+}
+</code></pre>
+
+<p>使用 <code>gb</code> 添加依赖的 <code>gracehttp</code> 第三方包：</p>
+
+<pre><code class="language-shell">$ gb vendor fetch github.com/tabalt/gracehttp
+</code></pre>
+
+<p>最终整个项目目录结构为：</p>
+
+<pre><code>./
+|-- src
+|   `-- hellogb
+|       `-- main.go
+`-- vendor
+    |-- manifest
+    `-- src
+        `-- github.com
+            `-- tabalt
+                `-- gracehttp
+                    |-- README.md
+                    |-- connection.go
+                    |-- gracehttpdemo
+                    |   `-- main.go
+                    |-- listener.go
+                    `-- server.go
+</code></pre>
+
+<p>编译执行程序：</p>
+
+<pre><code class="language-shell">$ gb build hellogb
+$ ./bin/hellogb
+</code></pre>
+
+<p>最后访问 <code>http://127.0.0.1:8080/</code> 即可访问 Web 服务。</p>
+
+<h4 id="command">Command</h4>
+
+<h5 id="gb-command">gb Command</h5>
+
+<table>
+<thead>
+<tr>
+<th align="left">Command</th>
+<th align="center">功能</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left">build</td>
+<td align="center">编译包</td>
+</tr>
+
+<tr>
+<td align="left">vendor</td>
+<td align="center">调用 gb-vendor</td>
+</tr>
+
+<tr>
+<td align="left">doc</td>
+<td align="center">显示文档</td>
+</tr>
+
+<tr>
+<td align="left">env</td>
+<td align="center">打印项目的环境变量</td>
+</tr>
+
+<tr>
+<td align="left">generate</td>
+<td align="center">处理源代码生成Go文件</td>
+</tr>
+
+<tr>
+<td align="left">info</td>
+<td align="center">显示项目的信息</td>
+</tr>
+
+<tr>
+<td align="left">list</td>
+<td align="center">显示项目下的所有包</td>
+</tr>
+
+<tr>
+<td align="left">test</td>
+<td align="center">执行测试</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h5 id="gb-vendor-parameter">gb vendor Parameter</h5>
+
+<table>
+<thead>
+<tr>
+<th align="left">Parameter</th>
+<th align="center">功能</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left">fetch</td>
+<td align="center">获取一个远程依赖</td>
+</tr>
+
+<tr>
+<td align="left">update</td>
+<td align="center">更新一个本地依赖</td>
+</tr>
+
+<tr>
+<td align="left">list</td>
+<td align="center">每行一个列出所有依赖</td>
+</tr>
+
+<tr>
+<td align="left">delete</td>
+<td align="center">删除一个本地依赖</td>
+</tr>
+
+<tr>
+<td align="left">purge</td>
+<td align="center">清除所有未引用的依赖</td>
+</tr>
+
+<tr>
+<td align="left">restore</td>
+<td align="center">从manifest清单文件还原依赖</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p>本文参考 tabalt 的 <a href="http://tabalt.net/blog/golang-package-dependency-management-tool-gb/">Golang包依赖管理工具gb</a> 一文。</p>
+</blockquote>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/C-Prefess-Program/">
+        C Prefess Program Note
+      </a>
+    </h1>
+
+    <span class="post-date">Sat, Jul 30, 2016</span>
+
+    
+
+<h1 id="c专家编程-笔记本">《C专家编程》 笔记本</h1>
+
+<h3 id="c专家编程-是每一位程序员应该读的第二本c语言书籍">《C专家编程》是每一位程序员应该读的第二本C语言书籍！</h3>
+
+<blockquote>
+<p>讲了各种c的缺陷，推荐go用户好好体验，很多都在go里做了修正 —— [ggarlic]()</p>
+
+<p>书很好，翻译一般，校对不负责任。</p>
+</blockquote>
+
+<ol>
+<li><p><strong>新西兰</strong> 是关于时间编程的一个特殊地点；</p></li>
+
+<li><p>编译器设计者的金科玉律 <strong>效率（几乎）就是一切</strong>；</p></li>
+
+<li><p>B语言是 <strong>解释模式</strong> 语言，而C语言是 <strong>编译模式并引入了类型系统</strong> ，使效率大大提高；</p></li>
+
+<li><p>C语言是为了 <strong>编译器设计者</strong> 而生的，这就是为什么很多编程语言在初期都是使用C语言编译器的原因；</p></li>
+
+<li><p>为什么数组 <strong>下标从0开始</strong> ？</p>
+
+<ul>
+<li>在计算资源缺乏的过去，0标号的写法可以节省编译时间</li>
+<li>现代语言中0标号可以更优雅的表示数组字串</li>
+<li>在支持指针的语言中，标号被视作是偏移量，因此从0开始更符合逻辑</li>
+</ul></li>
+
+<li><p>将 <strong>常量放在比较表达式的前面</strong> 可以大大减少因打字出错将 <code>==</code> 输入为 <code>=</code> 的情况 <code>if(3 == x) {...}</code></p></li>
+
+<li><p><strong>Bourne Shell</strong> 的出现促成了 The International Obfuscated C Code Competition（国际C语言混乱代码大赛）；</p></li>
+
+<li><p><strong>ANSI C</strong> 美国国家标准化组织所定下的C语言标准；</p></li>
+
+<li><p>语言律师 —— “可以从200多页的手册中提炼出5句话，并起来放到你面前，你只要一看就能明白自己问题答案的人”；</p></li>
+
+<li><p>关键字 <code>const</code> 并不能把变量变成常量！在一个符号前面加上 <code>const</code> 只是表示这个符号不能被赋值，也就是变为 <strong>Read Only</strong> 。其最有用之处在于限定函数的形参，这样该函数将不会修改实参指针所指的数据，但其他的（没有用 <code>const</code> 的）函数却有可能修改它。</p></li>
+
+<li><p>尽量不要在你的程序中使用 <strong>无符号类型</strong> ，以免增加不必要的复杂性。尤其是，不要仅仅因为其不存在负值（如年龄、 国债）而用它来表示数量。因为在某些情况下，会出现以下 BUG：</p>
+
+<ul>
+<li>-1 会被翻译成非常巨大的正整数。</li>
+<li>-1 会比 1 大。</li>
+</ul></li>
+
+<li><p><code>malloc(strlen(str))</code> 几乎永远是错误的，因为 不要忘记还有 <code>'\0'</code> ；</p></li>
+
+<li><p>NUL  用于结束有一个 ASCII 码零的正确术语；
+NULL 用于表示什么都不指向；</p></li>
+
+<li><p>如果需要使用一些临时变量的时候，请把它放在块的开始处！</p></li>
+
+<li><p>缺省采用 &ldquo;Fall Through&rdquo;，在 <strong>97%</strong> 的情况下都是错误的！</p>
+
+<pre><code class="language-c">// Fall Through : End without break;
+switch (number) {
+case 1: printf(&quot;case 1\n&quot;);
+case 2: printf(&quot;case 2\n&quot;);
+case 3: printf(&quot;case 3\n&quot;);
+...
+}
+</code></pre></li>
+
+<li><p>一种简单的方法，使一段代码第一次执行时的行为与以后的执行的行为不同；</p>
+
+<pre><code class="language-c">generate_initializer(char * string) 
+{
+static char separator = ' ';
+printf(&quot;%c %s\n&quot;, separator, string);
+separator = ',';
+}
+</code></pre></li>
+
+<li><p>重载之过：
+```c
+// 这是多少个乘号？
+p = N * sizeof * q;
+r = malloc(p);
+// 答案：1个，sizeof操作符将指针q指向的东西作为操作数，它返回q所指对象的类型的字节数</p></li>
+</ol>
+
+<p>// 这是int的长度乘以p？还是把未知类型的指针强制转换为int？
+apple = sizeof(int) * p;</p>
+
+<pre><code>
+18. 什么是 **结合性** ？
+
+&gt; 在几个操作符具有相同优先级的时候决定先运行哪一个。
+
+19. 为什么要使用 fgets() 而不是 gets() ？
+
+20. 注释符缺陷：
+```c
+a //*
+//*/ b
+</code></pre>
+
+<blockquote>
+<p>means a/b in C but a in C++</p>
+</blockquote>
+
+<ol>
+<li><p>早用line，勤用lint。当你做错事的时候，他会告诉你哪里不对，应该始终使用lint程序，按照它的道德标准办事。像使用 <code>go-lint</code> 一样写出优秀的代码。</p></li>
+
+<li><p>将结构的声明与变量的定义分开可以使代码更加容易阅读：</p>
+
+<pre><code class="language-c">struct veg { int weight, price_per_lb; };
+struct veg onion, radish, turnip;
+</code></pre></li>
+
+<li><p><code>union</code> 与 <code>struct</code> 不同的是：</p></li>
+</ol>
+
+<blockquote>
+<p>在内存布局中，struct 是将每个成员依次存储，而在 union 中，所有的成员都从偏移地址零开始存储。这样，每个成员的位置都重叠在一起：在某个时刻，只有一个成员真正存储于该地址。</p>
+
+<p>所以 union 一般用于节省空间，因为 有些数据是不可能同时出现的，如果同时存储他们，显然颇为浪費。可以将互斥的两个字段存储于一个 union 中来节省空间：</p>
+</blockquote>
+
+<pre><code class="language-c">union secondary_characteristics {
+    char has_fur;
+    short num_of_leg_in_excess_of_4;
+};
+struct creature {
+    char has_backbone;
+    union secondary_characteristics form;
+};
+</code></pre>
+
+<blockquote>
+<p>这种方法在存储 2*10^7 只动物的时候可以节省 20MB 磁盘空间。</p>
+
+<p>union 也可以将同一个数据解释成两个不同的东西：</p>
+</blockquote>
+
+<pre><code class="language-c">union bits32_tag {
+    int whole;  /* 一个32位的值 */
+    struct {char c0, c1, c2, c3; } byte; /* 4个8位的字节 */
+} value;
+</code></pre>
+
+<ol>
+<li><p><code>enum</code> 也就是 Golang 中的 <code>toao</code>：</p>
+
+<pre><code class="language-c">enum sizes { small = 7, medium, large = 10, humungous };
+// medium = 8 ; humungous = 11;
+</code></pre></li>
+
+<li><p>理解C语言声明的优先级规则</p>
+
+<ul>
+<li>A 声明从它的名字开始读取，然后按照优先级顺序依次读取。</li>
+<li>B 优先级从高到低依次是：
+
+<ul>
+<li>1 声明中被括号括起来的那部分</li>
+<li>2 后缀操作符：
+
+<ul>
+<li>括号 () 表示这是一个函数；</li>
+<li>方括号 [] 表示这是一个数组；</li>
+</ul></li>
+<li>3 前缀操作符：星号 * 表示 “指向&hellip;的指针”</li>
+</ul></li>
+<li>C 如果 const 和（或）volatie 关键字的后面紧跟类型说明符（如int，long等），那么它作用于类型说明符。在其他情况下，const 和（或）volatie关键字作用于它左边紧邻的指针星号。</li>
+</ul></li>
+</ol>
+
+<pre><code class="language-c">char * const *(*next) ();
+</code></pre>
+
+<blockquote>
+<p>next 是一个指向函数的指针，该函数返回另一个指针，该指针指向一个只读的指向char的指针。</p>
+</blockquote>
+
+<ol>
+<li>使字符串的比较看上去更自然：</li>
+</ol>
+
+<blockquote>
+<p>strcmp() 函数用于比较两个字符串，当他们相等返回 0</p>
+</blockquote>
+
+<pre><code class="language-c">// 这看起来有点不符合语法
+if(!strcmp(s, &quot;volatile&quot;)) return QUALIFIER;
+
+// 也许我们可以这样做
+#define STRCMP(a, R, b) (strcmp(a, b) R 0)
+if(STRCMP(s, == , &quot;volatile&quot;))
+</code></pre>
+
+<ol>
+<li><p>数组与指针的区别： <code>P102</code></p></li>
+
+<li></li>
+</ol>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/redigo-open2manyfiles/">
+        redigo : open too many files
+      </a>
+    </h1>
+
+    <span class="post-date">Wed, Jul 27, 2016</span>
+
+    
+
+<h1 id="redigo-panic-error-open-too-many-files">Redigo - panic error : open too many files.</h1>
+
+<h3 id="abstract">Abstract</h3>
+
+<p>今天对 <a href="https://www.github.com/HackeZ/getAcFunPage">getAcFunPage</a> 项目做 Benchmark 的时候发现了 Redis 会频繁报一个 <code>socket: too many open files</code> 的错误，后来发现并不是代码的问题，而是 Linux 的设置问题。
+下面就来说说我是这么解决这个问题的。</p>
+
+<h3 id="problem">Problem</h3>
+
+<p>Benchmark 时报错内容截取如下：</p>
+
+<pre><code>http: panic serving 127.0.0.1:53512: dial tcp :6379: socket: too many open files
+goroutine 5322 [running]:
+net/http.(*conn).serve.func1(0xc820f87f80)
+    /usr/local/go/src/net/http/server.go:1389 +0xc1
+panic(0x797240, 0xc820b12050)
+    /usr/local/go/src/runtime/panic.go:426 +0x4e9
+main.GetPageAndJSON(0x0, 0x0)
+    /home/hackerzgz/workspace/golang/src/getAcFunPage/main.go:130 +0x20a
+main.HandleGetResp(0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /home/hackerzgz/workspace/golang/src/getAcFunPage/main.go:82 +0x18
+net/http.HandlerFunc.ServeHTTP(0x8902f0, 0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /usr/local/go/src/net/http/server.go:1618 +0x3a
+net/http.(*ServeMux).ServeHTTP(0xc820015740, 0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /usr/local/go/src/net/http/server.go:1910 +0x17d
+net/http.serverHandler.ServeHTTP(0xc82008a680, 0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /usr/local/go/src/net/http/server.go:2081 +0x19e
+net/http.(*conn).serve(0xc820f87f80)
+    /usr/local/go/src/net/http/server.go:1472 +0xf2e
+created by net/http.(*Server).Serve
+    /usr/local/go/src/net/http/server.go:2137 +0x44e
+</code></pre>
+
+<p>出现这个错误的时候， <code>webbench</code> 的参数为 <code>-c 300 -t 60</code> ，也就是并发300个客户端访问并持续60s。</p>
+
+<p>由报错信息第一行中的 <code>dial tcp :6379</code> 很容易看出，这是由 Redis 所引起的错误。</p>
+
+<h3 id="why">Why</h3>
+
+<p>根据 <a href="http://stackoverflow.com/questions/19971968/go-golang-redis-too-many-open-files-error">Stack Overflow</a> 上的一个回答，这是由于 Linux 下设置的 <strong>文件描述符上限(file descriptors limit)</strong> 所引起的错误，在Ubuntu系统中，该值上限为 <strong>1024</strong> ，于是当 Redis 需要接收来自高并发所带来的连接请求时，连接数很有可能 <strong>超出文件描述符的上限值</strong> ，于是 Redis 就会报错了。</p>
+
+<blockquote>
+<p>文件描述符:<br />
+内核（kernel）利用文件描述符（file descriptor）来访问文件。文件描述符是非负整数。打开现存文件或新建文件时，内核会返回一个文件描述符。读写文件也需要使用文件描述符来指定待读写的文件。</p>
+</blockquote>
+
+<h3 id="solve">Solve</h3>
+
+<p>要解决这个问题也很简单，只需要将服务器系统的文件描述符上限修改成一个更大的值即可：</p>
+
+<pre><code class="language-shell">$ ulimit -n 99999
+</code></pre>
+
+<p>然后还需要对 Redigo 的连接池设置做出修改：</p>
+
+<pre><code class="language-go">return &amp;redis.Pool{
+		MaxIdle:     64,
+		IdleTimeout: 3 * time.Second,
+		MaxActive:   99999, // max number of connections
+		...
+}
+</code></pre>
+
+<p>编译，测试。终于不再报错了。</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/why-handlefunc-called-twice/">
+        Why HandleFunc Called Twice
+      </a>
+    </h1>
+
+    <span class="post-date">Sun, Jul 24, 2016</span>
+
+    
+
+<h2 id="why-handlefunc-called-twice">Why <strong>HandleFunc()</strong> called twice?</h2>
+
+<h3 id="abstract">Abstract</h3>
+
+<p>今天遇到之前碰见过的一个问题，但是之前忘记研究了，正好今天终于把这个问题弄清楚了，于是记录下来。</p>
+
+<p>想必很多做后台的小伙伴都写过服务器了，但是有没有遇到服务器在 <strong>通过不同的（Brower、API）方式访问</strong> 的时候，服务器响应方法的 <strong>次数</strong> 是不一样的情况呢？</p>
+
+<h3 id="problem">Problem</h3>
+
+<p>先来看看Golang中的简易服务器搭建代码：</p>
+
+<pre><code class="language-go">func SayHello(rw http.ResponseWriter, req *http.Request) {
+    io.WriteString(rw, &quot;hello~ You are in!&quot;)
+    log.Println(&quot;Oh, Here is a Guy coming in!&quot;)
+}
+
+func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc(&quot;/&quot;, SayHello)
+    http.ListenAndServe(&quot;:8080&quot;, mux)
+}
+</code></pre>
+
+<p>这是一个最简单的Golang服务器搭建，当http访问 <code>http://localhost:8080</code> 的时候，该服务器会对客户端返回 <code>hello~ You are in!</code> ，同时在服务器控制台中打印 <code>Oh, Here is a Guy coming in!</code> 。</p>
+
+<p>有意思的部分来了：</p>
+
+<blockquote>
+<p>通过 <strong>Brower</strong> 访问的时候，服务器控制台会打印出 <strong>两行</strong> <code>Oh, Here is a Guy coming in!</code>。</p>
+
+<p>通过 <code>curl http://localhost:8080</code> 命令进行访问的时候，服务器控制台只会打印 <strong>一行</strong> <code>Oh, Here is a Guy coming in!</code>。</p>
+</blockquote>
+
+<h2 id="why">Why</h2>
+
+<p>为什么会出现那么有趣的问题呢？<a href="http://stackoverflow.com/questions/33432192/handlefunc-being-called-twice">StackOver</a>上也有人问了这个问题，原因出现在 Brower 上，通过打印 <code>requsets</code>，你会发现 Brower 还会发起二次请求去请求 <code>/favicon.ico</code>，也就是页面的小图标。</p>
+
+<p>所以这就是用 <code>CURL</code> 发起请求的时候，并不会出现二次请求的原因！</p>
+
+<h2 id="solve">Solve</h2>
+
+<p>既然知道了这个问题出现在哪，剩下就好办了，既然浏览器要请求图标，那么我们就在写一个路由专门处理这个请求即可：</p>
+
+<pre><code class="language-go">func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc(&quot;/&quot;, SayHello)
+    // Handle /favicon.ico
+    mux.HandleFunc(&quot;/favicon.ico&quot;, func(rw http.ResponseWriter, req *http.Request) {})
+    http.ListenAndServe(&quot;:9000&quot;, mux)
+}
+</code></pre>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/golang-dev-log/">
+        Golang Dev Log
+      </a>
+    </h1>
+
+    <span class="post-date">Sat, Jul 23, 2016</span>
+
+    
+
+<h2 id="golang-dev-log">Golang Dev Log</h2>
+
+<hr />
+
+<p>今天快要把 <a href="https://www.github.com/HackeZ/getAcFunPage">getAcFunPage</a> 这个项目完结了，结果在重构项目的时候出现了两个哭笑不得的 <strong>BUG</strong> 。总结下来，都是因为自身对 Golang 认识不够深入而出现的问题，所以现在这篇 Blog 是专门记录我在Golang开发中遇到的需要注意的点，以此警醒自己！</p>
+
+<ol>
+<li>一个通用的结构体应该以一个包的方式存在并进行引用，否则会出现同一个结构体在不同的包中声明之后，在调用的时候，编译器会报 <code>cannot use xxx (type user) as type School.user</code> 的错误。</li>
+</ol>
+
+<pre><code class="language-go">// Example 1
+
+// file main.go
+type user struct {
+    name     string
+    age      int64
+}
+
+// file school.go
+type user struct {
+    name     string
+    age      int64
+}
+</code></pre>
+
+<ol>
+<li>如果一个函数需要使用一个 <strong>相对路径</strong> 调用一个 <code>静态文件</code> ，那么需要将这个 <code>静态文件</code> 的路径作为参数进行传入。<br />
+因为 Golang 中对于 <code>静态文件</code> 的调用不是根据函数所在位置的 <strong>相对路径</strong> ，而是取决于调用这个函数的文件的位置所对应的相对路径。</li>
+</ol>
+
+<pre><code class="language-go">// Example 2
+
+// ./markdown/markdown-style.go (Wrong)
+func GetStyle() {
+    f, err := os.OpenFile(&quot;./markdown-style.css&quot;,...)
+}
+
+// ./markdown/markdown-style.go (Corrent)
+func GetStyle(filepath string) {
+    f, err := os.OpenFile(filepath,...)
+}
+
+// ./main.go
+func main() {
+    // Wrong:  The system cannot find the file specified.
+    md.GetStyle()
+
+    // Corrent
+    md.Corrent(&quot;./markdown/markdown-style.css&quot;)
+}
+</code></pre>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/redigo-action-1/">
+        Redigo Action - 1
+      </a>
+    </h1>
+
+    <span class="post-date">Fri, Jul 22, 2016</span>
+
+    
+
+<h1 id="redigo-action">Redigo Action</h1>
+
+<h4 id="redis-作为一个内存型的高性能数据库-如今是越来越火了-为了得到更高的-qps-以及-tps-我们无法忽视掉这个如此强大的数据库">Redis 作为一个内存型的高性能数据库，如今是越来越火了，为了得到更高的 QPS 以及 TPS ，我们无法忽视掉这个如此强大的数据库。</h4>
+
+<h4 id="在-redis-官网中-golang语言的-框架-http-redis-io-clients-go-有两个是被官方所推荐的-分别为">在 Redis 官网中，Golang语言的<a href="http:redis.io/clients#go">框架</a>有两个是被官方所推荐的，分别为：</h4>
+
+<p><strong>1. <a href="https:github.com/garyburd/redigo">Redigo</a></strong>
+<strong>2. <a href="https:github.com/mediocregopher/radix.v2">Radix</a></strong></p>
+
+<h4 id="本着源码易读优先-我选择了-redigo-进行开发尝试-项目地址-点我-https-www-github-com-hackez-getacfunpage">本着源码易读优先，我选择了 Redigo 进行开发尝试，项目地址<a href="https:www.github.com/HackeZ/getAcFunPage">点我</a>。</h4>
+
+<h3 id="action">Action</h3>
+
+<p>熟悉Redis的同学都知道，Redis是 <strong>单进程，单线程，IO多路复用</strong> 的，这一点不同于 MySQL 的多线程。
+ 这就意味这Redis可以使用长连接来进行通信，那么，我们就需要一个连接池去管理这些长连接，当一个长连接使用完毕之后就可以交给下一个长连接继续进行使用。</p>
+
+<blockquote>
+<p><strong>连接池</strong>
+基本思想是在系统初始化的时候，将数据库连接作为对象存储在内存中，当用户需要访问数据库时，并非建立一个新的连接，而是从连接池中取出一个已建立的空闲连接对象。使用完毕后，用户也并非将连接关闭，而是将连接放回连接池中，以供下一个请求访问使用。
+而连接的建立、断开都由连接池自身来管理。同时，还可以通过设置连接池的参数来控制连接池中的初始连接数、连接的上下限数以及每个连接的最大使用次数、最大空闲时间等等。
+也可以通过其自身的管理机制来监视数据库连接的数量、使用情况等。</p>
+</blockquote>
+
+<p>而 Redigo 就是支持连接池的，看看 <a href="https:github.com/garyburd/redigo/blob/master/redis/pool.go#L43">Redigo - Pool</a>.
+其 L43 ～ L92 就给出了一个完整的 连接池 的正确打开方式。</p>
+
+<pre><code class="language-go">func newPool(server, password string) *redis.Pool {
+      return &amp;redis.Pool{
+          MaxIdle: 3,
+          IdleTimeout: 240 * time.Second,
+          Dial: func () (redis.Conn, error) {
+            c, err := redis.Dial(&quot;tcp&quot;, server)
+            if err != nil {
+                return nil, err
+            }
+            if _, err := c.Do(&quot;AUTH&quot;, password); err != nil {
+                c.Close()
+                return nil, err
+              }
+               return c, err
+          },
+          TestOnBorrow: func(c redis.Conn, t time.Time) error {
+              _, err := c.Do(&quot;PING&quot;)
+              return err
+          },
+      }
+  }
+</code></pre>
+
+<p>这段简单易懂的代码返回了一个可用的 Redis 连接池，为了能够进行长连接处理，我们还需要定义一个全局的 <strong>redis.Pool</strong> 变量进行使用。</p>
+
+<pre><code class="language-go">  var (
+      pool *redis.Pool
+      redisServer = flag.String(&quot;redisServer&quot;, &quot;:6379&quot;, &quot;&quot;)
+      redisPassword = flag.String(&quot;redisPassword&quot;, &quot;&quot;, &quot;&quot;)
+  )
+
+  func main() {
+      flag.Parse()
+      pool = newPool(*redisServer, *redisPassword)
+      ...
+  }
+</code></pre>
+
+<p>当 <strong>request请求</strong> 来到，我们就可以这样进行获取连接，并且一定记得在使用完毕之后将连接放回连接池。</p>
+
+<pre><code class="language-go">   func serveHome(w http.ResponseWriter, r *http.Request) {
+       conn := pool.Get()
+       defer conn.Close()
+       ....
+   }
+</code></pre>
+
+<h5 id="到了这里-一个可用并且高性能的-redis-数据库的连接已经基本构建完毕了">到了这里，一个可用并且高性能的 Redis 数据库的连接已经基本构建完毕了！</h5>
+
+<h5 id="接下来就可以愉快地进行使用了">接下来就可以愉快地进行使用了～</h5>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/cold-start/">
+        Cold Start
+      </a>
+    </h1>
+
+    <span class="post-date">Wed, Jul 13, 2016</span>
+
+    
+
+<h1 id="about-two-different-cold-start">About Two Different Cold Start</h1>
+
+<h2 id="app-cold-start">APP Cold Start</h2>
+
+<hr />
+
+<h2 id="what-s-app-cold-start"><strong>What&rsquo;s App Cold Start</strong></h2>
+
+<blockquote>
+<p>对于最近安装的App a，我们不可能得到该对于该App用户的特殊使用信息。尤其是打开该App的概率 P(a)。另一方面，对于给定的 feature（特征）的先验概率（指根据以往经验和分析得到的概率），可以从其他用户的信息中获取。</p>
+
+<p>因此，对于最近安装的App，怎么估计其打开概率P(a)是至关重要的。</p>
+</blockquote>
+
+<h2 id="yahoo-s-experimental-result"><strong>Yahoo&rsquo;s Experimental Result</strong></h2>
+
+<p>通过记录最近安装的App打开记录（活跃度），图5（Daily）以及图6（Hourly）：</p>
+
+<p><img src="http://7xsxev.com1.z0.glb.clouddn.com/Days-after-installation.png" alt="Days After Installation" /></p>
+
+<p>图 5  日常App安装后的活跃度</p>
+
+<p><img src="http://7xsxev.com1.z0.glb.clouddn.com/Days-after-installation.png" alt="Hours After Installation" /></p>
+
+<p>图 6  每小时App安装后的活跃度</p>
+
+<p>从图 5 和 6 中可以看到，最近安装的App一个显着的特点是在安装后的数小时内非常活跃。但是经过这段时间之后，最近安装的App 的活跃度显着减少。与此相反，一些一开始活跃度并不高的 App 经常在它们安装后的很长一段时间依然在使用。</p>
+
+<h2 id="to-solve-app-cold-start"><strong>To Solve App Cold Start</strong></h2>
+
+<p>因此，为了更好地获取最近安装App打开频率，我们根据它们的活跃度持续时间长短，定义两种App类型，分别为：</p>
+
+<ol>
+<li>Short-term （活跃度持续时间短，在刚开始的一段时间活跃度很高）</li>
+<li>Long-term（活跃度持续时间长，在刚开始的一段时间活跃度不够高）</li>
+</ol>
+
+<p>为捕抓每个App在时间上的突出显著性，我们将App使用数据转化为 <strong>Beta(α,β)</strong> 值，为了区分时间显著性，我们使用尖峰（excess kurtosis）δ来评价每个App的时间使用峰度：
+<img src="http://7xsxev.com1.z0.glb.clouddn.com/Excess-kurtosis-expression.png" alt="Excess Kurtosis Expression" /></p>
+
+<p>通过尖峰值可以判断最近安装App的类型：</p>
+
+<ul>
+<li>一个高尖峰值的App意味着它越有可能是Short-term类App（Game）</li>
+<li>一个低尖峰值的App意味着它越有可能是Long-term类App（Communication）</li>
+</ul>
+
+<p><strong>Short-term类的App可以通过获取特定的特点的用户来获取平均打开频率。</strong><br />
+<strong>Long-term类的App则可以通过获取所有用户的平均值。</strong></p>
+
+<p>随着用户打开App的事件增加，我们可以计算最近安装App的打开概率，因此，我们使用贝叶斯平均其他用户的历史信息来计算接下来的使用信息。计算最近安装App的打开概率公式如下：</p>
+
+<p><img src="http://7xsxev.com1.z0.glb.clouddn.com/App-cold-start-expression.png" alt="App Cold Start Expression" /></p>
+
+<p>通过计算公式，仅仅通过少量的用户打开App事件得到同一App的其他用户近似的非加权值的启动概率。<strong>用户打开App事件越多，该公式的准确率越高。</strong></p>
+
+<hr />
+
+<h2 id="user-cold-start">User Cold Start</h2>
+
+<h2 id="what-s-user-cold-start"><strong>What&rsquo;s User Cold Start</strong></h2>
+
+<blockquote>
+<p>在这一小节，我们提出两种方法解决User冷启动问题，什么是User冷启动呢？
+当一个用户安装了一个Launcher软件（Aviate，Buzz，Go 等桌面软件），我们在不知道这个用户的任何信息下如何向该用户推荐App清单呢？这个就是User冷启动问题。</p>
+</blockquote>
+
+<h2 id="two-ways-to-solve"><strong>Two Ways to Solve</strong></h2>
+
+<ol>
+<li><p>最相似用户策略：
+当这个new User在安装了Launcher之后，我们可以在已知的用户集中找到跟他最相似的用户，并将这个用户的使用指标赋值给他。<br />
+那么怎么去计算跟他最相似的用户呢，我们可以使用 <strong>Jaccard系数</strong> 进行计算，这个系数主要用来比较样本集中的相似性和分散性的一个概率。<br />
+<strong>计算出用户之间的相似度，就可以将最相似用户的App清单进行推送。</strong><br />
+事实上，最相似的用户的App清单与新用户的清单还是有很大的不一样的，在极端条件下，也就是不涉及到敏感的用户信息条件下，他们之间的App清单相似度甚至不会超过一个 <strong>纯粹随机策略</strong> （相当于“猴子排序”）。<br />
+虽然这个策略提高了User冷启动的平均准确度，但是也限制了可生成用户建议数的范围。</p></li>
+
+<li><p>伪用户策略：
+通过生成“伪历史”（假的用户使用记录）可以解决用户冷启动问题，而且该策略可以作为新用户训练PTAN模型的一种方法。<br />
+这个想法在于找到少量的相似用户，其App清单能够覆盖新用户的App清单。这是一个简单的 <strong>NP-Hard证明问题</strong> 。</p></li>
+</ol>
+
+<blockquote>
+<p>P.S 1: NP-Hard问题也就是不能在限定的时间内计算出结果的问题，只能通过候选答案来验证这个答案是不是我们已知问题的一个答案</p>
+
+<p>P.S 2关于这个问题为什么是一个NP-Hard问题，论文中没有给出解释，如果想了解怎么判断一个问题是不是NP-Hard问题，可以到 <a href="http://blog.csdn.net/com_stu_zhang/article/details/7248277">这里</a> 查看解释，因为解释非常复杂，请允许我不复制粘贴上来</p>
+</blockquote>
+
+<p>通过算法5，我们生成了伪用户数据：
+<img src="http://7xsxev.com1.z0.glb.clouddn.com/Build-pseudo-user.png" alt="Build Pseudo User" /></p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/hadoop-1/">
+        Learning in Hadoop - Day 1
+      </a>
+    </h1>
+
+    <span class="post-date">Mon, Jun 13, 2016</span>
+
+    <p>第一次玩Hadoop</p>
+
+<p>最近在折腾机器学习，因为查阅到Yahoo的</p>
+
+<blockquote>
+<p>《Predicting The Next App That You Are Going To Use》</p>
+</blockquote>
+
+<p>这一篇Paper的时候，它提到了Google的 <strong>MapReduce</strong>以及 <strong>Word2Vec</strong> 。相信折腾过机器学习的小伙伴都会比较熟悉这两个东西了。于是，为了更深入地进行学习，我便无情地掉进了这个 <strong>坑</strong> 里。</p>
+
+<p>首先介绍一下背景，Yahoo的这篇Paper主要就是根据用户日常APP的使用习惯，然后对用户下一启动的APP进行预测。因为Yahoo认为日常手机的使用场景会对哪个APP的开启与否有着很强的关联性，于是他们便使用了 <strong>Word2Vec</strong> 对用户手机中记录的6个手机事件：</p>
+
+<ol>
+<li><em>Last Location Update</em></li>
+<li><em>Last Charge Cavle</em></li>
+<li><em>Last Audio Cable</em></li>
+<li><em>Last Context Trigger</em></li>
+<li><em>Last Context Pulled</em></li>
+<li><em>Last App Open</em></li>
+</ol>
+
+<p>进行计算词向量，用于文本预测。而Word2Vec有着3个广为流传的版本：</p>
+
+<ol>
+<li>C</li>
+<li>Python</li>
+<li>Java</li>
+</ol>
+
+<p>但是这3个版本对于Yahoo来说性能都是不足的，经我测试，一个800M的文本在C语言版本中计算时间需要20Min！</p>
+
+<p>而在预测下一个APP这个场景里，这种计算速度是完全不可以接受的，于是Yahoo他们利用MapReduce重写了一个Word2Vec，将这个版本放在云端进行计算。这就是我进行MapReduce学习的原因。</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/lenproblem/">
+        Named Question in Golang
+      </a>
+    </h1>
+
+    <span class="post-date">Thu, Jun 2, 2016</span>
+
+    <p>Golang中遇到的命名问题</p>
+
+<p>昨天在写随机生成字符串代码时候遇到了一个Golang的命名问题，代码如下：</p>
+
+<pre><code class="language-go">func GetRandomString(len string) string {
+    str := &quot;0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;
+    bytes := []byte(str)
+    result := []byte{}
+    r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+    for i := 0; i &lt; len; i++ {
+        result = append(result, bytes[r.Intn(len(str))]) // &lt;- Here is the Problem: `cannot call non-function len (type int)`
+    }
+    return string(result)
+}
+</code></pre>
+
+<p>这个问题太蛋疼了，之前好像从来没遇到过这个问题，而且Google好像也没有找到相关的问题原因。</p>
+
+<p>后来一步步排查代码，才发现问题原来是出现在：</p>
+
+<blockquote>
+<p>for i := 0; i &lt; <strong>len</strong>; i++ {</p>
+</blockquote>
+
+<p>中的 <strong>len</strong> 变量与函数 <strong>len()</strong> 重复而出现的命名错误，所以只需要将 <strong>len</strong> 变量重新命名即可解决该问题。</p>
+
+<p>总结：在Golang中使用的变量一定不要和某个函数名字相同，否则不会通过，我现在暂时不清楚是Golang编译器出现的问题，还是Golang本来就不允许这样写，我会继续查阅相关文档查清楚！</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/channel/">
+        The Channel in Golang
+      </a>
+    </h1>
+
+    <span class="post-date">Wed, May 11, 2016</span>
+
+    
+
+<p>Golang中的Channel分析</p>
+
+<p>作为Golang语言的核心，并发编程是学习Golang的必经之路。对于不同进程之间的通信手段总会涉及到跨进程通信，那么这个通信手段必须是一个可共享内存的方法，而Golang提倡的理念为：</p>
+
+<blockquote>
+<p>“应该以通信作为手段来共享内存”</p>
+</blockquote>
+
+<p>而这一句话的直接体现在于Golang所提供的一个预定义数据类型 —— <strong>Channel</strong></p>
+
+<p>Channel提供了一种机制。它既可以 <strong>同步</strong> 两个被并发执行的函数，又可以让这两个函数通过传递特定类型的值来进行 <strong>通信</strong>。使用Channel可以让我们编写更清晰且正确的代码。</p>
+
+<p>关于使用Channel需要记住的知识点：</p>
+
+<ul>
+<li>在同一时刻，仅有一个Goroutine能向同一个Channel发送元素值，同时也只有一个Goroutine能从它哪里接收元素值。</li>
+<li>Channel是一个FIFO的消息队列。</li>
+<li>Channel中的元素值已经确保具有原子性。</li>
+<li>Channel可以分为缓冲与非缓冲，它们之间的差别非常大。</li>
+<li>Channel可分为双向与单向，一般通道都会声明为双向，只有在限制函数体中使用通道的方式（只允许发送或接收）才会使用单向Channel。</li>
+</ul>
+
+<h2 id="talk-is-cheap-show-me-the-code">Talk is Cheap,Show me the Code!</h2>
+
+<ul>
+<li>初始化通道</li>
+</ul>
+
+<p>因为Channel属于引用类型之一，所以必须使用make关键字初始化它。</p>
+
+<pre><code class="language-go">// 缓冲通道（容纳int类型元素，有长度，可暂存元素）
+intChan := make(chan int, 5)
+
+// 非缓冲通道（容纳byte类型元素，无长度，不可暂存元素）
+byteChan := make(chan byte)
+</code></pre>
+
+<ul>
+<li>发送元素值</li>
+</ul>
+
+<pre><code class="language-go">// 向intChan通道发送一个元素值为5的元素
+intChan &lt;- 5
+</code></pre>
+
+<p>注意：向一个值为nil的Channel进行发送操作会造成当前Goroutine <strong>永久阻塞！</strong>。<br />
+而向一个已经塞满元素的Channel进行发送操作则会将当前的Goroutine <strong>阻塞</strong>，直至Channel中的元素被接收，所以一般会在 <strong>select</strong> 代码块中进行发送操作。</p>
+
+<ul>
+<li>接收元素值</li>
+</ul>
+
+<pre><code class="language-go">// 在intChan通道中接收一个元素值
+elem := &lt;-intChan
+
+// 接收元素值，并判断该通道是否已经关闭
+elem, ok := &lt;-intChan
+if !ok {
+    fmt.Println(&quot;Channel is Closed!&quot;)
+}
+</code></pre>
+
+<p>同样需要注意的是，如果向一个值为nil的Channel进行接收操作，同样会造成 <strong>永久阻塞！</strong><br />
+而向一个没有元素值的Channel进行接收操作，也会将当前的Goroutine <strong>阻塞</strong>，直至Channel中有了新的元素。</p>
+
+<ul>
+<li>关闭Channel</li>
+</ul>
+
+<p>关闭Channel并不是如其字面意思，完全将Channel关闭。而其正确的作用是告诉系统，不应该再允许任何针对被关闭的通道的发送操作，该通道已经被关闭，但是已经缓存在Channel中的元素不会受到影响，这也是Channel非常优秀的特性之一。</p>
+
+<pre><code class="language-go">// 调用内建函数close()关闭Channel
+close(intChan)
+</code></pre>
+
+<p>注意，无论任何时候，我们都 <strong>不应该</strong> 在接收端关闭Channel，因为我们永远都不知道发送端是否已经将元素发送完毕。</p>
+
+<hr />
+
+<blockquote>
+<p>最后，可以到<a href="https://www.github.com/HackeZ">这里</a>学习更多的Channel相关代码！</p>
+</blockquote>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/socket/">
+        socket
+      </a>
+    </h1>
+
+    <span class="post-date">Tue, May 3, 2016</span>
+
+    
+
+<h1 id="socket-study">Socket Study</h1>
+
+<hr />
+
+<h2 id="what-is-socket">What is Socket</h2>
+
+<p>Socket(插座) 作为 UNIX的进程通信机制，一般被通称为</p>
+
+<blockquote>
+<p>套接字</p>
+</blockquote>
+
+<p>用于描述IP地址和端口，是一个通信链的句柄。</p>
+
+<p>在Internet上的主机一般会运行多个服务软件，同时提供多个服务，每个服务都打开一个Socket，并绑定在一个端口上，不同端口对应不同的服务。</p>
+
+<hr />
+
+<p>正如其英文意思 —— 插座，Socket在不同端口提供着不同的服务，互相之间互不干扰，你只需要将插头插入正确的插座，就可以得到你想要的服务了。</p>
+
+<h2 id="socket通讯过程">Socket通讯过程</h2>
+
+<p>Socket类似于电话插座，电话的通话双方相当于互相通信的2个进程，区号是它的网络地址；区内一个单位的交换机相当于一台主机，主机分配给每个用户的局内号码相当于socket号。</p>
+
+<ul>
+<li>任何用户在通话之前，首先要<strong>占有一部</strong>电话机，相当于申请一个socket；</li>
+<li>同时还要知道对方的号码，相当于对方有一个固定的的socket地址；</li>
+<li>然后向对方拨打电话，相当于发出连接请求<strong>（假如对方不在同一个区内，还要添加区号，相当于给出网络地址）</strong>；</li>
+<li>这时候，如果对方在场并且空闲，相当于通信的另一个主机开机且可以接受连接请求；</li>
+<li>对方拿起电话，双方就可以正式通话，相当于<strong>连接成功</strong></li>
+<li>双方通话的过程，是一方向电话机发出信号和对方电话机接收信号的过程，相当于向socket发送数据以及接收数据；</li>
+<li>通话结束后，一方挂起电话相当于关闭socket，撤销连接；</li>
+</ul>
+
+<h2 id="socket-协议">Socket 协议</h2>
+
+<p>Socket协议：（协议，本地地址，本地端口）<br />
+一个完整的socket有一个本地唯一的socket号，由<strong>操作系统进行分配</strong>
+最重要的是，socket是<strong>面向客户/服务器模型</strong>而设计的，针对客户和服务器程序提供不同的socket系统调用：</p>
+
+<ul>
+<li>客户可以随机申请一个socket，相当于一个想打电话的人可以在任何一台入网电话上拨号呼叫，系统会为之分配一个socket号；</li>
+<li>但是服务器拥有的是全局公认的socket，任何客户都可以向它发出连接请求和信息请求，相当于一个被呼叫的电话拥有一个呼叫方知道的电话号码。</li>
+</ul>
+
+<p>Socket利用<strong>客户/服务器模式</strong>巧妙地解决了通信之间建立通信连接的问题，服务器socket半相关被全局公认这一概念非常重要。</p>
+
+<hr />
+
+<p>我们不妨考虑一下，两个<strong>完全随机</strong>的用户进程之间如何建立通信？假如通信双方没有任何一方的固定socket，就好比打电话的双方不知道彼此的电话号码，要通信是<strong>不可能的</strong>。</p>
+
+<h2 id="socket-api">Socket API</h2>
+
+<p>在Java中，Socket API：
+&gt; java.net.Socket 继承于 java.lang.Object</p>
+
+<p>它有<strong>八个构造器</strong>，方法并不多，下面介绍频繁使用的三个方法：</p>
+
+<ul>
+<li>Accept</li>
+</ul>
+
+<p>该方法用于产生“阻塞”，直到接收到一个连接，并且返回一个客户端的socket对象实例。</p>
+
+<blockquote>
+<p>阻塞 —— 它使程序运行暂时“停留”在这个地方，直到会话产生，然后程序继续。通常的“阻塞”都是由循环产生的。</p>
+</blockquote>
+
+<ul>
+<li>getInputStream</li>
+</ul>
+
+<p>该方法获得网络连接输入，同时返回一个InputStream实例，通过该实例可以传输byte字节流。</p>
+
+<ul>
+<li>getOutStream</li>
+</ul>
+
+<p>该方法连接的是另一端得到输入，同时返回一个OnputSteam，该实例可以得到输入传输的byte字节流。</p>
+
+<blockquote>
+<p>注意：其中 getInputStream 以及 getOutStream 方法均可能产生一个 IOException，它必须被捕获，通常都会被另一个流对象使用。</p>
+</blockquote>
+
+<h2 id="socket连接过程">Socket连接过程</h2>
+
+<p>根据连接启动方式以及本地socket连接的目标，socket之间的连接过程可以分成三个步骤：</p>
+
+<ul>
+<li>服务器监听</li>
+<li>客户端请求</li>
+<li>连接确认</li>
+</ul>
+
+<p><strong>服务器监听</strong>：是服务器端的socket并不定位具体的客户端socket，而是处于<strong>等待连接</strong>的状态，实时监控网络状态。</p>
+
+<p><strong>客户端请求</strong>：是指客户端的socket提出连接请求，要连接的目标是服务器端的socket，为此，客户端socket必须要描述清楚它要连接的服务器socket，支出该服务器端socket的<strong>地址</strong>以及<strong>端口</strong>，然后就想服务器socket提出连接请求。</p>
+
+<p><strong>连接确认</strong>：是指当服务器端socket监听到或者说是接收到客户端socekt的连接请求，它就响应客户端socket的请求，建立一个新的进程，把服务器端socket的<strong>描述</strong>发给客户端，一旦客户端<strong>确认了此描述</strong>，连接就建立好了。而服务器端socket继续处于监听状态，继续等待其他客户端socket的连接请求。</p>
+
+<p>Socket UDP &amp;&amp; TCP</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/about-me/">
+        About Me
+      </a>
+    </h1>
+
+    <span class="post-date">Sat, Apr 30, 2016</span>
+
+    
+
+<h1 id="about-me">About Me</h1>
+
+<p>我是朱冠州，以HackerZ的名字混迹于网络中。于1994年8月出生于广东肇庆，迷迷茫茫直至高中开始喜欢上计算机，于是便选择了计算机科学与技术这门学科考上了北京理工大学珠海学院。平常我是一个喜欢拍照/看推理小说/撸代码的一个小小码农。</p>
+
+<p>我的大学生活是从<strong>C语言</strong>开始的，一路上在 <strong>PHP/JAVA/Android/Node/Web</strong> 中迷失了自我，直至我遇上了<strong>Golang</strong>，我喜欢Go的那种优雅/简练的语法，更喜欢在Golang世界中的那种自由，所以我心甘情愿当一个Gopher。</p>
+
+<p>我希望能成为一个能够改善我们身边生活/见证未来科技行业革新的一个<strong>创新者</strong>以及<strong>见证者</strong>。</p>
+
+<h1 id="contact-me">Contact Me</h1>
+
+<ul>
+<li>Email: 767110505@qq.com</li>
+<li>Weibo: <a href="http://weibo.com/u/2246744750">HackerZGZ</a></li>
+<li>Github: <a href="https://github.com/HackeZ">HackeZ</a></li>
+<li>Blog: <a href="http://hackez.github.io">HackerZ</a></li>
+</ul>
+
+<h1 id="technology-stack">Technology stack</h1>
+
+<p>前端</p>
+
+<ul>
+<li>HTML/CSS/JavaScript</li>
+<li>JQuery</li>
+<li>ReactJS</li>
+</ul>
+
+<p>后端</p>
+
+<ul>
+<li>PHP (ThinkPHP)</li>
+<li>NodeJS (Express)</li>
+<li>Golang (Beego/Hugo)</li>
+</ul>
+
+<p>数据库</p>
+
+<ul>
+<li>MySQL</li>
+<li>MongoDB</li>
+<li>Redis</li>
+</ul>
+
+<p>移动端</p>
+
+<ul>
+<li>Andorid</li>
+</ul>
+
+<p>工具</p>
+
+<ul>
+<li>Linux</li>
+<li>Git</li>
+</ul>
+
+<h1 id="future">Future</h1>
+
+<p>对于未来，我希望能够在广东找到一份我喜爱的工作，能保持我对新技术和事物的爱好，并投身于Coding的最前线。</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/qn-sdkv7-pb/">
+        Qiniu Go SDK v7 Problem
+      </a>
+    </h1>
+
+    <span class="post-date">Fri, Apr 15, 2016</span>
+
+    <p>下载七牛Go SDK v7遇到的问题</p>
+
+<p>今天想要使用七牛的Go SDK时候遇到了肯定会出现的一个情况，那就是</p>
+
+<blockquote>
+<p>$ go get -u qiniupkg.com/api.v7</p>
+</blockquote>
+
+<p>命令出现了</p>
+
+<blockquote>
+<p>golang.org/x/net/context</p>
+</blockquote>
+
+<p>不能下载的问题，首先说一下为什么肯定会报错的问题，那就是Go官方将这个包的下载地址更改了（后来翻墙到Go官网发现的），但是不知道为什么go get命令还是将这个包的下载地址设置为原来的那个。
+好吧，于是我试着使用七牛提供的方法下载了那个压缩包，并将其解压在</p>
+
+<blockquote>
+<p>$GOPATH/src</p>
+</blockquote>
+
+<p>目录下，再次运行go get 命令，这时候出现了</p>
+
+<blockquote>
+<p>golang.org/x/net/content is not using a known version</p>
+</blockquote>
+
+<p>的错误。
+无奈之下，只有翻墙出去Go官方网站查看文档了，然后发现Go官方将这个<a href="https://github.com/golang/net">net包</a>放在了Github中，于是我在Github中下载下来这个包，然后在</p>
+
+<blockquote>
+<p>$GOPATH/src</p>
+</blockquote>
+
+<p>下，也就是Github.com文件夹的平级目录下手动创建了该路径</p>
+
+<blockquote>
+<p>&hellip;/golang.org/x</p>
+</blockquote>
+
+<p>，然后将net包放进去，再次运行</p>
+
+<blockquote>
+<p>$ go get -u qiniupkg.com/api.v7</p>
+</blockquote>
+
+<p>OK，成功了，接下来就可以开始愉快地玩耍了:)</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/build/">
+        本篇将教会你如何使用Hugo快捷地在Github中创建自己的Blog
+      </a>
+    </h1>
+
+    <span class="post-date">Wed, Apr 13, 2016</span>
+
+    
+
+<h2 id="安装hugo">安装Hugo</h2>
+
+<hr />
+
+<p>Hugo是一个使用Golang语言编写的静态Web站点生成框架，其是由Docker前员工Steve Francia进行编写的，因为其开源在Github里，所以安装非常方便，我们可以选择二进制安装包进行安装。安装完成之后可以运行以下命令查看是否正确安装：</p>
+
+<blockquote>
+<p>$ hugo version</p>
+</blockquote>
+
+<p>正确安装应该会出现如下信息：</p>
+
+<blockquote>
+<p>Hugo Static Site Generator v0.14 BuildDate: 2015-05-26T09:29:16+08:00</p>
+</blockquote>
+
+<p>接下来就可以愉快地开始Hugo之旅了。</p>
+
+<h2 id="创建hugo项目">创建Hugo项目</h2>
+
+<hr />
+
+<p>创建Hugo项目可以使用如下命令</p>
+
+<blockquote>
+<p>$ hugo new site &lt;site-name&gt;</p>
+</blockquote>
+
+<p>这样在该目录下就会出现这个项目文件夹了。
+我们 cd 进入该目录，可以看到该目录下有一个名为：</p>
+
+<blockquote>
+<p>config.toml</p>
+</blockquote>
+
+<p>的文件，根据其名字很容易就知道这个就是Hugo的站点的配置文件了。
+该文件中仅仅只有3行代码：</p>
+
+<blockquote>
+<p>baseurl = &ldquo;<a href="http://replace-this-with-your-hugo-site.com/&quot;">http://replace-this-with-your-hugo-site.com/&quot;</a>
+languageCode = &ldquo;en-us&rdquo;<br />
+title = &ldquo;My New Hugo Site&rdquo;</p>
+</blockquote>
+
+<p>同样也是根据其单词我们也可以知道他们代表的是什么，我们可以对title进行一下修改，改为我们Blog的名字。</p>
+
+<p>然后我们在该目录下运行命令：</p>
+
+<blockquote>
+<p>$ hugo server</p>
+</blockquote>
+
+<p>这个命令会将repo转换成静态html文件放入项目的public文件夹下，然后通过访问浏览器的</p>
+
+<blockquote>
+<p><a href="http://localhost:1313">http://localhost:1313</a></p>
+</blockquote>
+
+<p>地址，即可看到Hugo启动起来了。虽然现在站点是空白一片，但是通过添加Hugo主题，我们可以瞬间建立一个完整Blog站点。</p>
+
+<h2 id="选取hugo主题">选取Hugo主题</h2>
+
+<hr />
+
+<p>我们可以到Hugo官网选取自己喜欢的<a href="http://themes.gohugo.io/">主题</a>
+下面我以Hyde主题为例，将该主题应用到自己的Blog中。</p>
+
+<p>首先在站点的根目录下创建一个 themes 文件夹。</p>
+
+<blockquote>
+<p>$ mkdir themes<br />
+$ cd themes<br />
+$ git clone <a href="https://github.com/spf13/hyde.git">https://github.com/spf13/hyde.git</a>  #下载对应主题</p>
+</blockquote>
+
+<p>然后，我们需要对根目录下的</p>
+
+<blockquote>
+<p>config.toml</p>
+</blockquote>
+
+<p>进行配置，以应用下载下来的主题。</p>
+
+<p>配置完成的文件如下所示：</p>
+
+<pre><code class="language-toml">baseurl = &quot;http://replace-this-with-your-hugo-site.com/&quot;
+languageCode = &quot;en-us&quot;    
+title = &quot;HackerZ - Blog&quot;    
+theme = &quot;hyde&quot;   # 指定themes
+
+[params]    
+	description = &quot;Welcome to my personal Blog&quot;   # hyde主题的首页描述 
+	themeColor = &quot;theme-base-08&quot;  # 指定hyde的主题颜色
+</code></pre>
+
+<p>这样，主题就算是配置好了，让我们再次运行</p>
+
+<blockquote>
+<p>$ hugo server</p>
+</blockquote>
+
+<p>看看效果吧！</p>
+
+<h2 id="新建文章">新建文章</h2>
+
+<hr />
+
+<p>首页以及样式都已经有了，那么下面就来看看怎么新建一篇文章吧。</p>
+
+<p>在站点项目下运行</p>
+
+<blockquote>
+<p>$ hugo new welcome.md</p>
+</blockquote>
+
+<p>即可看到在项目的content目录下被创建了一个 welcome.md 文件，该文件就是刚才新建出来的文章了。
+我们可以往里面写点东西，注意，这是 markdown 格式的，hugo会将其编译成 html 格式放置在 public 目录下。</p>
+
+<blockquote>
+<p>welcome.md</p>
+
+<pre><code>+++    
+Categories = [&quot;Development&quot;, &quot;GoLang&quot;]    
+Description = &quot;&quot;    
+Tags = [&quot;Development&quot;, &quot;golang&quot;]    
+date = &quot;2016-03-29T14:38:19+08:00&quot;    
+menu = &quot;main&quot;    
+title = &quot;Welcome&quot;    
+
++++
+
+### 
+这是使用Hugo创建的站点中的第一篇文章。
+</code></pre>
+
+<p>然后启动Hugo服务查看效果吧。</p>
+
+<p>$ hugo server</p>
+</blockquote>
+
+<p>到这里，基本的Hugo使用已经讲解完毕了，接下来就要将该静态站点迁移到我们自己的 github.io 中了。</p>
+
+<h2 id="使用github-pages">使用Github Pages</h2>
+
+<p>要使用 github-pages 首先需要注册属于自己的 github 账号，注册完成之后，创建一个 repository，名为</p>
+
+<blockquote>
+<p>&lt;USERNAME&gt;.github.io</p>
+</blockquote>
+
+<p>这个是使用 Github Pages 的命名规定，如我自己就是</p>
+
+<blockquote>
+<p>HackeZ.github.io</p>
+</blockquote>
+
+<p>创建完成之后，在我们已经写好的Hugo站点下修改配置文件中的 baseurl属性：</p>
+
+<blockquote>
+<p>config.toml</p>
+
+<pre><code>baseurl = &quot;http://&amp;lt;USERNAME&gt;.github.io//&quot;
+# baseurl = &quot;http://replace-this-with-your-hugo-site.com/&quot;
+# 原baseurl可以将其注释掉，之后本地可以进行调试
+</code></pre>
+
+<p>保存后，运行如下命令：</p>
+
+<p>$ hugo -v</p>
+</blockquote>
+
+<p>该命令会将配置文件中的参数进行静态文件编译，运行完之后，可以到public下的 index.html 中看看静态文件的地址是否是有误，如果有误，将不能正确地显示出主题样式。</p>
+
+<p>一切正确之后，我们以public目录为 &lt;USERNAME&gt;.github.io 项目的主分支，将其 push 到 github仓库中，等待10分钟左右，访问属于你自己的Blog网站吧！</p>
+
+<blockquote>
+<p>http://&lt;USERNAME&gt;.github.io</p>
+</blockquote>
+
+<h2 id="配置属于自己的hugo主题">配置属于自己的Hugo主题</h2>
+
+<p>你们可以看到，我已经对原来的Hyde主题进行了修改了，那么是怎么做到的呢，我们可以直接对 themes/hyde 下的配置文件进行修改，增加自己想要的样式，相信聪明的你肯定可以很快熟悉 Hugo 的语法，创建属于自己的主题。</p>
+
+  </div>
+  
+  <div class="post">
+    <h1 class="post-title">
+      <a href="http://hackez.github.io/welcome/">
+        Welcome
       </a>
     </h1>
 
     <span class="post-date">Tue, Mar 29, 2016</span>
 
-    <p>这是使用Hugo创建的站点中的第一篇文章</p>
+    <p>这是使用Hugo创建的站点中的第一篇文章，我是HackerZ。</p>
+
+<p>如果你想知道如何使用Hugo搭建这样一个Blog的话，可以看看<a href="http://hackez.github.io/build">这里</a>。</p>
 
   </div>
   
 </div>
 </div>
 
-  <script data-no-instant>document.write('<script src="http://'
-        + (location.host || 'localhost').split(':')[0]
-		+ ':1313/livereload.js?mindelay=10"></'
-        + 'script>')</script></body>
+  </body>
 </html>

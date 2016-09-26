@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Beego on HackerZ - Blog</title>
+    <link>http://hackez.github.io/categories/beego/</link>
+    <description>Recent content in Beego on HackerZ - Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 01 Sep 2016 18:45:49 +0800</lastBuildDate>
+    <atom:link href="http://hackez.github.io/categories/beego/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>How to Use Captcha in Beego Correct</title>
+      <link>http://hackez.github.io/how2use-captcha-in-beego/</link>
+      <pubDate>Thu, 01 Sep 2016 18:45:49 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/how2use-captcha-in-beego/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;最近在做 Beego 的 Web 网站开发，主题是 &lt;code&gt;个人词典&lt;/code&gt; ，项目地址 &lt;a href=&#34;https://github.com/HackeZ/Personal-Dictionary&#34;&gt;点我&lt;/a&gt; 。
+在关于 Beego 的验证码使用方法上出现了问题，后面通过阅读 Beego 的源码解决了该问题，下面来详细讲诉一下。&lt;/p&gt;
+
+&lt;h2 id=&#34;problem&#34;&gt;Problem&lt;/h2&gt;
+
+&lt;p&gt;先来看看错误的代码吧&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// ...
+var cpt *captcha.Captcha
+
+func (c *MainController) Login () {
+    // ...
+    // Get Verification Code.
+    store = cache.NewMemoryCache()
+    cpt = captcha.NewWithFilter(&amp;quot;/captcha/&amp;quot;, store)
+	cpt.ChallengeNums, _ = beego.AppConfig.Int(&amp;quot;captcha_length&amp;quot;)
+	cpt.StdWidth = 100
+	cpt.StdHeight = 42
+
+    c.TplName = &amp;quot;login.tpl&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这样写出现的问题是，开启服务器之后，只有第一次输入的验证码是正确的，一旦刷新页面或者已经登录之后，无论再次怎么进行登录都是 &lt;code&gt;验证码不正确&lt;/code&gt; 的错误。
+甚至在很多情况下都会出现验证码图片显示不出来。&lt;/p&gt;
+
+&lt;h2 id=&#34;solve&#34;&gt;Solve&lt;/h2&gt;
+
+&lt;p&gt;其实很容易就可以想到是 Cache 模块而导致的问题，因为 Beego 的 Memory Cache 从源代码中看其实就是一个存放在内存的 &lt;code&gt;Map&lt;/code&gt; ，而且该 &lt;code&gt;Map&lt;/code&gt; 是带生存周期的。所以应该将 &lt;code&gt;Cache&lt;/code&gt; 设置为一个全局变量，那么才能可以让 &lt;code&gt;Captcha&lt;/code&gt; 每次都能到正确的内存地址中的 Map 存取数据。而不是每次访问都新建一次 &lt;code&gt;Cache&lt;/code&gt; 。&lt;/p&gt;
+
+&lt;p&gt;正确的用法如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// ...
+var cpt *captcha.Captcha
+var store cache.Cache
+
+func (c *MainController) Login () {
+    // ...
+    // Get Verification Code.
+    cpt = captcha.NewWithFilter(&amp;quot;/captcha/&amp;quot;, store)
+	cpt.ChallengeNums, _ = beego.AppConfig.Int(&amp;quot;captcha_length&amp;quot;)
+	cpt.StdWidth = 100
+	cpt.StdHeight = 42
+
+    c.TplName = &amp;quot;login.tpl&amp;quot;
+}
+
+func init() {
+    store = cache.NewMemoryCache()
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这样，无论是怎么折腾该验证码， &lt;code&gt;Captcha&lt;/code&gt; 都能到正确的 &lt;code&gt;Map&lt;/code&gt; 中进行操作，一切的问题都解决了。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,4 +1,5 @@
-baseurl = "http://replace-this-with-your-hugo-site.com/"
+baseurl = "http://hackez.github.io//"
+#baseurl = "http://replace-this-with-your-hugo-site.com/"
 languageCode = "en-us"
 title = "HackerZ - Blog"
 theme = "hyde"
@@ -13,6 +14,6 @@ theme = "hyde"
 
 [Menu]
     [[Menu.main]]
-        Name = "About"
-        URL  = "/about"
+        Name = "Book List"
+        URL  = "/booklist"
         Weight = 1

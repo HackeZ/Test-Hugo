@@ -1,0 +1,313 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> Golang Package Dependency Management Tool &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>Golang Package Dependency Management Tool</h1>
+			  <span class="post-date">Sun, Aug 7, 2016</span>
+			      
+
+<h1 id="golang-package-dependency-management-tool">Golang Package Dependency Management Tool</h1>
+
+<h2 id="intro">Intro</h2>
+
+<p>Golang一直以来被外界诟病的一个问题就是包的依赖管理问题。那么今天就来讲一个：</p>
+
+<blockquote>
+<p>Golang包依赖管理工具 —— gb</p>
+</blockquote>
+
+<p>gb 在其官网中定义自己为：</p>
+
+<blockquote>
+<p>A project based build tool for the Go programming language.</p>
+</blockquote>
+
+<p>一个Golang的项目工程通常由 <code>bin</code>、<code>pkg</code>、<code>src</code>三个子目录构成：</p>
+
+<ul>
+<li>bin : 存放编译后生成的可执行文件</li>
+<li>pkg : 编译后生成的文件（如：.a）</li>
+<li>src : 存放源代码（如：.go .c .h .s等）</li>
+</ul>
+
+<p>而 <code>gb</code> 在这个概念的基础上新增了一个 <code>vendor</code> 目录来存放项目依赖的第三方包（如 <em>beego</em> ，<em>gracehttp</em> 等）</p>
+
+<h2 id="gb-action">gb action</h2>
+
+<h4 id="install">Install</h4>
+
+<p>gb ==&gt; <a href="https://getgb.io/">首页</a>  ==&gt;  <a href="https://github.com/constabulary/gb/">Github</a></p>
+
+<p>根据说明，使用</p>
+
+<pre><code class="language-shell">$ go get github.com/constabulary/gb/...
+</code></pre>
+
+<p>命令即可安装 gb。</p>
+
+<p>当该命令运行完毕，请检查 <code>env</code> 下的第一个 <code>$GOPATH</code> 的 <code>bin</code> 目录下是否生成了 <code>gb</code> 以及 <code>gb-vendor</code> 两个可执行文件。</p>
+
+<blockquote>
+<p>如安装报错，请检查你是否正确配置了 $GOPATH 等环境变量。</p>
+</blockquote>
+
+<h4 id="use">Use</h4>
+
+<p>下面试着使用 <code>gb</code> 来构建一个基于第三方包 <code>gracehttp</code> 的简易 Golang Web 项目，来体验一下 <code>gb</code> 的魅力。</p>
+
+<p>首先初始化 <code>hellogb</code> 项目目录结构：</p>
+
+<pre><code class="language-shell">$ cd $GOPATH/src/hellogb
+$ mkdir -p src/hellogb
+$ mkdir -p vendor/src
+</code></pre>
+
+<p>编写 Web 程序：</p>
+
+<pre><code class="language-go">// vim src/hellogb/main.go
+package main
+
+import (
+    &quot;fmt&quot;
+    &quot;net/http&quot;
+
+    &quot;github.com/tabalt/gracehttp&quot;
+)
+
+func main() {
+    http.HandleFunc(&quot;/&quot;, func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, &quot;hello gb&quot;)
+    })
+
+    err := gracehttp.ListenAndServe(&quot;:8080&quot;, nil)
+    if err != nil {
+        fmt.Println(err)
+    }
+}
+</code></pre>
+
+<p>使用 <code>gb</code> 添加依赖的 <code>gracehttp</code> 第三方包：</p>
+
+<pre><code class="language-shell">$ gb vendor fetch github.com/tabalt/gracehttp
+</code></pre>
+
+<p>最终整个项目目录结构为：</p>
+
+<pre><code>./
+|-- src
+|   `-- hellogb
+|       `-- main.go
+`-- vendor
+    |-- manifest
+    `-- src
+        `-- github.com
+            `-- tabalt
+                `-- gracehttp
+                    |-- README.md
+                    |-- connection.go
+                    |-- gracehttpdemo
+                    |   `-- main.go
+                    |-- listener.go
+                    `-- server.go
+</code></pre>
+
+<p>编译执行程序：</p>
+
+<pre><code class="language-shell">$ gb build hellogb
+$ ./bin/hellogb
+</code></pre>
+
+<p>最后访问 <code>http://127.0.0.1:8080/</code> 即可访问 Web 服务。</p>
+
+<h4 id="command">Command</h4>
+
+<h5 id="gb-command">gb Command</h5>
+
+<table>
+<thead>
+<tr>
+<th align="left">Command</th>
+<th align="center">功能</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left">build</td>
+<td align="center">编译包</td>
+</tr>
+
+<tr>
+<td align="left">vendor</td>
+<td align="center">调用 gb-vendor</td>
+</tr>
+
+<tr>
+<td align="left">doc</td>
+<td align="center">显示文档</td>
+</tr>
+
+<tr>
+<td align="left">env</td>
+<td align="center">打印项目的环境变量</td>
+</tr>
+
+<tr>
+<td align="left">generate</td>
+<td align="center">处理源代码生成Go文件</td>
+</tr>
+
+<tr>
+<td align="left">info</td>
+<td align="center">显示项目的信息</td>
+</tr>
+
+<tr>
+<td align="left">list</td>
+<td align="center">显示项目下的所有包</td>
+</tr>
+
+<tr>
+<td align="left">test</td>
+<td align="center">执行测试</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h5 id="gb-vendor-parameter">gb vendor Parameter</h5>
+
+<table>
+<thead>
+<tr>
+<th align="left">Parameter</th>
+<th align="center">功能</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left">fetch</td>
+<td align="center">获取一个远程依赖</td>
+</tr>
+
+<tr>
+<td align="left">update</td>
+<td align="center">更新一个本地依赖</td>
+</tr>
+
+<tr>
+<td align="left">list</td>
+<td align="center">每行一个列出所有依赖</td>
+</tr>
+
+<tr>
+<td align="left">delete</td>
+<td align="center">删除一个本地依赖</td>
+</tr>
+
+<tr>
+<td align="left">purge</td>
+<td align="center">清除所有未引用的依赖</td>
+</tr>
+
+<tr>
+<td align="left">restore</td>
+<td align="center">从manifest清单文件还原依赖</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p>本文参考 tabalt 的 <a href="http://tabalt.net/blog/golang-package-dependency-management-tool-gb/">Golang包依赖管理工具gb</a> 一文。</p>
+</blockquote>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

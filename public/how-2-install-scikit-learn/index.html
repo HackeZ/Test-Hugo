@@ -1,0 +1,238 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> How To Install Scikit-learn Under OSX 10.11 &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>How To Install Scikit-learn Under OSX 10.11</h1>
+			  <span class="post-date">Mon, Aug 15, 2016</span>
+			      
+
+<h1 id="如何在osx下安装正确安装-scikit-learn">如何在osx下安装正确安装 scikit-learn</h1>
+
+<h3 id="使用-anaconda">使用 Anaconda</h3>
+
+<p><code>Anaconda</code> 是一个 Python 的集成科学计算环境，一键安装，方便好用。但是当我安装之后发现其只有自带了：</p>
+
+<ul>
+<li>numpy</li>
+<li>scipy</li>
+</ul>
+
+<p>而并没有 <code>scikit-learn</code>，然后当我使用</p>
+
+<pre><code class="language-shell">conda install scikit-learn
+</code></pre>
+
+<p>进行安装之后发现还是无法使用这个缺省的库，经我多方查找资料，原来是 <code>Mac 10.11</code> 版本中自带的 <code>Python 2.7</code> 环境与 <code>Anaconda</code> 的环境是分离的，所以只能 <code>Anaconda</code> 中使用这些库。</p>
+
+<p>然而这是我不太喜欢的一种方式，所以我放弃了，转而研究在 <code>Mac</code> 自带的 Python 环境中安装。</p>
+
+<h3 id="解除-osx-10-11-的-sip-限制">解除 OSX 10.11 的 ｀SIP｀ 限制</h3>
+
+<p>当我开始用 <code>pip</code> 安装第三方包的时候出现了如下的错误：</p>
+
+<pre><code class="language-shell">Collecting numpy
+
+Using cached numpy-1.10.2-cp27-none-macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.whlInstalling
+ collected packages: numpy
+ Found existing installation: numpy 1.8.0rc1
+ DEPRECATION: Uninstalling a distutils installed project (numpy) has been deprecated and will be removed in a future version. This is due to the fact that uninstalling a distutils project will only partially uninstall the project.
+ Uninstalling numpy-1.8.0rc1:Exception:Traceback
+ (most recent call last):
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/basecommand.py&quot;, line 211, in main
+ status = self.run(options, args)
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/commands/install.py&quot;, line 311, in run
+ root=options.root_path,
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_set.py&quot;, line 640, in install
+ requirement.uninstall(auto_confirm=True)
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_install.py&quot;, line 716, in uninstall
+ paths_to_remove.remove(auto_confirm)
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_uninstall.py&quot;, line 125, in remove
+ renames(path, new_path)
+ File &quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/utils/__init__.py&quot;,
+ line 315, in renames
+shutil.move(old, new)
+ File &quot;/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py&quot;, line 302, in move
+ copy2(src, real_dst)
+ File &quot;/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py&quot;, line 131, in copy2
+ copystat(src, dst)
+ File &quot;/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py&quot;, line 103, in copystat
+ os.chflags(dst, st.st_flags)OSError:
+ [Errno 1] Operation not permitted: '/var/folders/5n/vbm997m56xg3kw67y6bccn2m0000gn/T/pip-4tcBsd-uninstall/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy-1.8.0rc1-py2.7.egg-info'
+</code></pre>
+
+<p>仔细一看，发现了 <code>Operation not permitted</code> 的错误。</p>
+
+<p>经过 Google ，发现了原来是 Apple 经历了 <code>XCode编译器注入</code> 事件之后，提升了 <code>Mac OS X El Capitan系统</code> 的安全保护机制，加入了：</p>
+
+<blockquote>
+<p>System Integrity Protection (SIP)
+—— 系统完整性保护，其作用为强制性地保护系统相关的文件夹，开发者不能直接操作相关的文件内容。</p>
+</blockquote>
+
+<p>而 Python 库所在的路径为：</p>
+
+<pre><code class="language-shell">/System/Library/Frameworks/Python.framework/Versions/2.7/...
+</code></pre>
+
+<p>当然是属于其完整性保护的保护伞之下的，所以我需要把 <code>SIP</code> 关掉之后才能对其进行安装。</p>
+
+<p>引用外国大牛的关闭 SIP 的方法如下：</p>
+
+<ol>
+<li>Click the  menu.</li>
+<li>Select <code>Restart</code> …</li>
+<li>Hold down <code>command-R</code> to boot into the Recovery System.</li>
+<li>Click the <code>Utilities menu</code> and select <code>Terminal</code>.</li>
+<li>Type <code>csrutil disable</code> and press <code>return</code> .</li>
+<li>Close the <code>Terminal</code> app.</li>
+<li>Click the  menu and select <code>Restart</code> … .</li>
+</ol>
+
+<p>当然在安装完成之后最好还是将 SIP 重新打开：</p>
+
+<ol>
+<li>Click the  menu.</li>
+<li>Select <code>Restart</code> …</li>
+<li>Hold down <code>command-R</code> to boot into the Recovery System.</li>
+<li>Click the <code>Utilities menu</code> and select <code>Terminal</code>.</li>
+<li>Type <code>csrutil enable</code> and press <code>return</code> .</li>
+<li>Close the <code>Terminal</code> app.</li>
+<li>Click the  menu and select <code>Restart</code> … .</li>
+</ol>
+
+<h3 id="安装-scikit-learn-的正确姿势">安装 scikit-learn 的正确姿势</h3>
+
+<p>好吧，终于解决了上面这些问题了，安装应该没有问题了吧？很可惜，当我运行完：</p>
+
+<pre><code class="language-shell">$ sudo pip install numpy
+$ sudo pip install scipy
+$ sudo pip install scikit-learn
+</code></pre>
+
+<p>然后在 <code>Python</code> 下 <code>import sklearn</code> 时发生了如下错误：</p>
+
+<pre><code class="language-shell">Traceback (most recent call last):
+File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;
+File &quot;/Library/Python/2.7/site-packages/sklearn/__init__.py&quot;, line 57, in &lt;module&gt;
+from .base import clone
+File &quot;/Library/Python/2.7/site-packages/sklearn/base.py&quot;, line 11, in &lt;module&gt;
+from .utils.fixes import signature
+File &quot;/Library/Python/2.7/site-packages/sklearn/utils/__init__.py&quot;, line 10, in &lt;module&gt;
+from .murmurhash import murmurhash3_32
+File &quot;numpy.pxd&quot;, line 155, in init sklearn.utils.murmurhash (sklearn/utils/murmurhash.c:5029)
+ValueError: numpy.dtype has the wrong size, try recompiling
+</code></pre>
+
+<p>好惨，经过多方搜索，绝大部分的解答都是：</p>
+
+<pre><code class="language-shell">$ pip uninstall numpy scipy scikit-learn
+$ pip install numpy scipy scikit-learn
+</code></pre>
+
+<p>然而都并没有什么卵用，最后在这里找到了解决办法 =&gt; <a href="http://scikit-learn-general.narkive.com/kMA6mRCk/valueerror-numpy-dtype-has-the-wrong-size-try-recompiling">here</a></p>
+
+<p>其方法时不要使用 <code>pip install scikit-learn</code></p>
+
+<p>而是到 Github 中找到 <a href="https://github.com/scikit-learn/scikit-learn">scikit-learn</a> 项目进行安装：</p>
+
+<pre><code class="language-shell">$ git clone https://github.com/scikit-learn/scikit-learn.git
+$ sudo python setup.py install
+</code></pre>
+
+<p>等待几分钟，安装完成，大功告成～</p>
+
+<h3 id="参考网站">参考网站：</h3>
+
+<ul>
+<li>在 osx 10.11 下解除 pip 权限安装 =&gt; <a href="http://blog.csdn.net/shi_weihappy/article/details/50938486">参考地址</a></li>
+<li>如何正确安装scikit-learn =&gt; <a href="http://www.tuicool.com/articles/aEJriuY">参考地址</a></li>
+</ul>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

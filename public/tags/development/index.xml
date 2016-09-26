@@ -2,20 +2,1791 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Development on HackerZ - Blog</title>
-    <link>http://localhost:1313/tags/development/</link>
+    <link>http://hackez.github.io/tags/development/</link>
     <description>Recent content in Development on HackerZ - Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 29 Mar 2016 14:38:19 +0800</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/development/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 25 Sep 2016 23:27:46 +0800</lastBuildDate>
+    <atom:link href="http://hackez.github.io/tags/development/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
-      <title>你好，欢迎来到我的Blog</title>
-      <link>http://localhost:1313/welcome/</link>
-      <pubDate>Tue, 29 Mar 2016 14:38:19 +0800</pubDate>
+      <title>CircuitBreaker 设计模式</title>
+      <link>http://hackez.github.io/circuitbreaker/</link>
+      <pubDate>Sun, 25 Sep 2016 23:27:46 +0800</pubDate>
       
-      <guid>http://localhost:1313/welcome/</guid>
-      <description>&lt;p&gt;这是使用Hugo创建的站点中的第一篇文章&lt;/p&gt;
+      <guid>http://hackez.github.io/circuitbreaker/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;今天发现了 &lt;a href=&#34;https://github.com/sony/&#34;&gt;Sony&lt;/a&gt; 竟然在 Github 上开源了他们的一些项目！而他们也是在用 &lt;code&gt;Golang&lt;/code&gt; 在开发后台！&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Amazing&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;于是不亦乐乎地看起了其中的 Golang 开源项目，而其中一个名为 &lt;a href=&#34;https://github.com/sony/gobreaker&#34;&gt;sony/gobreaker&lt;/a&gt; 的项目引起了我的注意。&lt;/p&gt;
+
+&lt;p&gt;项目简述中描述了这是一个 Golang 版本的 &lt;strong&gt;CircuitBreaker&lt;/strong&gt; 实现！&lt;/p&gt;
+
+&lt;p&gt;那么什么是 &lt;strong&gt;CircuitBreaker（断路器）&lt;/strong&gt; 呢？下面就来一起看看。&lt;/p&gt;
+
+&lt;h2 id=&#34;what-is-circuitbreaker&#34;&gt;What is CircuitBreaker&lt;/h2&gt;
+
+&lt;p&gt;根据传统的解释，断路器是广泛用于 &lt;em&gt;电子工程产业&lt;/em&gt; 的一个重要安全保障！&lt;/p&gt;
+
+&lt;p&gt;当你家里的洗衣机漏电了，电流就会瞬间增大，那么连接家里总线的 &lt;strong&gt;断路器&lt;/strong&gt; 就会剩下，及时切断总电源，防止意外的发生！&lt;/p&gt;
+
+&lt;p&gt;那么在最近的 &lt;code&gt;微服务&lt;/code&gt; 越来越流行的时代，软件架构开始将 &lt;strong&gt;断路器&lt;/strong&gt; 这一概念添加进来了。&lt;/p&gt;
+
+&lt;p&gt;我们知道，当你一旦开始将系统中的一部分拆解为一个独立服务，那么你就已经走进了 &lt;code&gt;微服务&lt;/code&gt; 的时代了。
+而在微服务中最重要的是要保证服务运行的稳定性，如果独立服务无法提供高质量或者是不能提供服务，那么这将会导致整个系统的崩溃！&lt;/p&gt;
+
+&lt;p&gt;而 &lt;code&gt;微服务&lt;/code&gt; 会遇到的故障有可能是：
+    - 瞬时故障：如慢的网络连接、超时，资源过度使用而暂时不可用；
+    - 不容易预见的突发故障：需要更长时间来纠正的故障；&lt;/p&gt;
+
+&lt;p&gt;而解决这些故障常常有两种方法：
+    - 重试机制：对于预期的短暂故障问题，通过重试模式是可以解决的；
+    - 断路器（CircuitBreaker）模式：将受保护的服务封装在一个可以监控故障的断路器对象中，当故障达到一定门限，断路器将跳闸（trip），所有后继调用将不会发往受保护的服务而由断路器对象之间返回错误。对于需要更长时间解决的故障问题，不断重试就没有太大意义了，可以使用断路器模式。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://martinfowler.com/bliki/images/circuitBreaker/sketch.png?_=0.814744712175792&#34; alt=&#34;CircuitBreaker - Sketch&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://martinfowler.com/bliki/images/circuitBreaker/state.png?_=0.47541342622693494&#34; alt=&#34;CircuitBreaker - State&#34; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;action-in-gobreaker&#34;&gt;Action in gobreaker&lt;/h2&gt;
+
+&lt;p&gt;简单介绍完 CircuitBreaker 的概念，那么接下来就结合 &lt;a href=&#34;https://github.com/sony/gobreaker&#34;&gt;gobreaker&lt;/a&gt; 的源码实际看看如何设计一个 断触器。&lt;/p&gt;
+
+&lt;p&gt;首先一个值得我们关注的点是 CircuitBreaker State， 它被设计为 &lt;strong&gt;3&lt;/strong&gt; 种状态：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;type State int
+const (
+    StateClosed State = iota
+    StateHalfOpen
+    StateOpen
+)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;CircuitBreaker 会根据当前处于不同的 &lt;code&gt;State&lt;/code&gt; ，而判断最多可以通过多少个 &lt;code&gt;Request&lt;/code&gt; 。&lt;/p&gt;
+
+&lt;p&gt;接下来是 &lt;code&gt;Setting&lt;/code&gt; ，通过 Setting 对象的值，可以新建出一个 CircuitBreaker ：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;type Settings struct {
+	Name          string  // CircuitBreaker 的名字
+	MaxRequests   uint32  // 最大连接数，根据 State 会自动调节允许通过的 Request 值
+	Interval      time.Duration // 当 CircuitBreaker 处于 Close 状态的时候，循环该时间段，清空连接数
+	Timeout       time.Duration // 当 CircuitBreaker 处于 Open 状态的时候，如果触发了该超时时间，将它置为 Half-Open
+	ReadyToTrip   func(counts Counts) bool // 判断当前失败数，是否应该进入 Close 状态
+	OnStateChange func(name string, from State, to State) // 当状态发生变化时候，触发该函数
+}
+
+func NewCircuitBreaker(st Settings) *CircuitBreaker {
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;因为这个源码实现其实非常简单，我也就不一一讲诉了，就再将一个比较重要的函数 &lt;code&gt;Execute&lt;/code&gt; 吧：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func (cb *CircuitBreaker) Execute(req func() (interface{}, error)) (interface{}, error) {
+	generation, err := cb.beforeRequest()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		e := recover()
+		if e != nil {
+			cb.afterRequest(generation, fmt.Errorf(&amp;quot;panic in request&amp;quot;))
+			panic(e)
+		}
+	}()
+
+	result, err := req()
+	cb.afterRequest(generation, err)
+	return result, err
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;该函数用于执行需要 CircuitBreaker 触发的函数，详情可以参考这里 =&amp;gt; &lt;a href=&#34;https://github.com/sony/gobreaker/blob/master/example/http_breaker.go&#34;&gt;example&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;首先执行 CircuitBreaker 的 beforeRequest，然后执行传进来的 req 函数，最后执行 afterRequest ，并捕获异常，如果有异常， recover 它，不停止程序，返回错误信息。&lt;/p&gt;
+
+&lt;h2 id=&#34;参考网站&#34;&gt;参考网站&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://blog.sina.com.cn/s/blog_72ef7bea0102vvsn.html&#34;&gt;mryqu - blog&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://www.cnblogs.com/davidwang456/p/3976607.html&#34;&gt;English&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>tcpdump in Action</title>
+      <link>http://hackez.github.io/tcpdump-in-action/</link>
+      <pubDate>Fri, 16 Sep 2016 10:07:54 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/tcpdump-in-action/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;昨天上线了新完成的网站 &lt;a href=&#34;http://123.207.0.81:8563&#34;&gt;Personal-Dictionary&lt;/a&gt; &lt;a href=&#34;https://www.github.com/HackeZ/Personal-Dictionary&#34;&gt;源码在此&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;但是上线期间却发生网站从 &lt;a href=&#34;http://127.0.0.1:8563&#34;&gt;http://127.0.0.1:8563&lt;/a&gt; 可以访问，但是外网访问却显示 &lt;code&gt;“无法访问此网络”&lt;/code&gt; 的情况，最后通过分析抓包工具 &lt;code&gt;tcpdump&lt;/code&gt; 的结果解决了该问题。&lt;/p&gt;
+
+&lt;h2 id=&#34;problem&#34;&gt;Problem&lt;/h2&gt;
+
+&lt;p&gt;这是一个 &lt;code&gt;Beego&lt;/code&gt; 应用，按理来说只要编译出二进制文件，然后将静态文件和二进制文件发送到服务器端，然后运行该二进制文件即可。&lt;/p&gt;
+
+&lt;p&gt;编译 Linux OS 下可执行文件的命令为&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;$ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o PD main.go&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;编译完成之后， 通过 &lt;code&gt;$ scp PD root@123.207.0.81:/home/...&lt;/code&gt; 将文件上传至服务器。&lt;/p&gt;
+
+&lt;p&gt;使用 &lt;code&gt;$ nohup ./PD &amp;amp;&lt;/code&gt; 即可将该应用以后台服务的形式运行在服务器中。&lt;/p&gt;
+
+&lt;p&gt;但是问题出现了，通过外网的 IP 地址访问该 应用的端口地址却提示 &lt;code&gt;“无法访问此网络”&lt;/code&gt; 的情况， 然后我使用 &lt;code&gt;$ curl http://127.0.0.1:8563&lt;/code&gt; 却能直接返回网页内容！&lt;/p&gt;
+
+&lt;h2 id=&#34;slove&#34;&gt;Slove&lt;/h2&gt;
+
+&lt;p&gt;为了解决这个问题，我最先想到的就是该端口是否被外网的中间件屏蔽了呢。有一个最直观的方法可以观察检查该情况，就是使用 &lt;code&gt;tcpdump&lt;/code&gt; 抓包工具！&lt;/p&gt;
+
+&lt;p&gt;在服务器端启动应用之后，使用 &lt;code&gt;$ tcpdump 网卡[eth0, lo] tcp port 8563 host 123.207.0.81&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;去截获访问该应用的端口 TCP 包，然后通过浏览器访问 &lt;a href=&#34;http://123.207.0.81:8563&#34;&gt;http://123.207.0.81:8563&lt;/a&gt; 测试 TCP 包是否能正确到达 服务器的该端口。&lt;/p&gt;
+
+&lt;p&gt;结果 tcpdump 截获到的结果可以简化为&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;.... [S]
+.... [R.]
+.... [S]
+.... [R.]
+.... [S]
+.... [R.]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;很明显了：
+    - &lt;code&gt;S&lt;/code&gt; 代表着 &lt;code&gt;SEND&lt;/code&gt;
+    - &lt;code&gt;R&lt;/code&gt; 代表着 &lt;code&gt;RST&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;浏览器试图访问该端口，然后服务器直接就 RST 掉该请求，这样的情况下很可能就是该端口没有被打开！&lt;/p&gt;
+
+&lt;p&gt;关于更多的 RST 情况我推荐一篇 Blog —— &lt;a href=&#34;https://my.oschina.net/costaxu/blog/127394&#34;&gt;costaxu&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;根据上面的情况，我很快就能定位到问题所在：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// main.go
+func main() {
+    beego.Run(&amp;quot;127.0.0.1&amp;quot;+beego.AppConfig.String(&amp;quot;httpport&amp;quot;)) // 这里只指定了内网的服务地址...
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;最后，只需要将 &lt;code&gt;beego.Run()&lt;/code&gt; 替换掉上面的即可解决。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Action in Protocol Buffers</title>
+      <link>http://hackez.github.io/protocol-buffers/</link>
+      <pubDate>Fri, 09 Sep 2016 09:44:00 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/protocol-buffers/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;如果要介绍 &lt;code&gt;Protocol Buffers&lt;/code&gt; 那么首先要从 RPC 说起，而熟悉分布式的同学应该都知道 RPC 吧，我简单介绍一下：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;PRC 也就是 Remote Procedure Call Protocol (远程调用协议)，也就是说当有 A, B 两台服务器，A 服务器 中可以通过 RPC 调用 B服务器 中的函数。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;在微服务和分布式变得越来越流行的今天，了解和学会 RPC 这个协议无疑是首要任务。&lt;/p&gt;
+
+&lt;h2 id=&#34;protocol-buffers&#34;&gt;Protocol Buffers&lt;/h2&gt;
+
+&lt;p&gt;那么 RPC 只是一个应用层协议，可以由不同的框架实现，而不同框架所支持的传输数据格式可以有很多：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;JSON&lt;/li&gt;
+&lt;li&gt;Gob&lt;/li&gt;
+&lt;li&gt;MessagePack&lt;/li&gt;
+&lt;li&gt;Protocol Buffers &amp;hellip;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;那么可以说 &lt;code&gt;Protocol Buffers&lt;/code&gt; 是这些所被支持的传输数据中比较高效而且通用的一种，其 &lt;a href=&#34;https://developers.google.com/protocol-buffers/&#34;&gt;官网&lt;/a&gt; 就列举出如：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;C++&lt;/li&gt;
+&lt;li&gt;C#&lt;/li&gt;
+&lt;li&gt;Go&lt;/li&gt;
+&lt;li&gt;Java&lt;/li&gt;
+&lt;li&gt;Python&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;的使用指南，而更多的如 &lt;code&gt;Ruby&lt;/code&gt; &lt;code&gt;JavaNano&lt;/code&gt; 等也可以被支持。&lt;/p&gt;
+
+&lt;h2 id=&#34;install-in-go&#34;&gt;Install in Go&lt;/h2&gt;
+
+&lt;p&gt;在 Go 中，我们可以直接使用 &lt;code&gt;protoc-gen-go&lt;/code&gt; 这个工具由 &lt;code&gt;.proto&lt;/code&gt; 模版文件直接生成可用的 &lt;code&gt;.go&lt;/code&gt; 文件。&lt;/p&gt;
+
+&lt;p&gt;安装方法：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;首先需要下载 &lt;code&gt;Protobuf&lt;/code&gt; 的编译器 &lt;a href=&#34;https://github.com/google/protobuf/releases&#34;&gt;protoc&lt;/a&gt; ，你可以下载一个对应系统版本的二进制版本，然后解压缩之后会在 &lt;code&gt;bin&lt;/code&gt; 文件夹下找到编译好的可执行文件。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;然后需要安装 &lt;code&gt;protoc-gen-go&lt;/code&gt; 插件和编解码支持库。&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# 插件安装
+$ go get github.com/golang/protobuf/protoc-gen-go
+$ cd $\
+GOPATH/src/github.com/golang/protobuf/protoc-gen-go
+$ go build &amp;amp;&amp;amp; go install
+
+# 编解码支持库
+$ go get github.com/golang/protobuf/proto
+$ cd $\
+GOPATH/src/github.com/golang/golang/protobuf/proto
+$ go build &amp;amp;&amp;amp; go install
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;最后还需要将 &lt;code&gt;$GOPAHTH/bin&lt;/code&gt; &lt;strong&gt;加入环境变量&lt;/strong&gt; ！&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;安装完成之后，可以在测试文件夹里先新建一个 &lt;code&gt;.proto&lt;/code&gt; 文件，往里面写入：&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;syntax=&amp;quot;proto2&amp;quot;;
+package xx // 该文件所属包名
+
+enum FOO { X = 17; };
+
+message Test {
+    required string label = 1;
+    optional int32 type = 2 [default=77];
+    repeated int64 reps = 3;
+    optional group OptionalGroup = 4 {
+    required string RequiredField = 5;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后运行 &lt;code&gt;protoc -I=&#39;*.proto文件所处的文件夹&#39; --go_out=. *.proto&lt;/code&gt; 即可生成以下内容：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// Code generated by protoc-gen-go.
+// source: example/human.proto
+// DO NOT EDIT!
+
+/*
+Package example is a generated protocol buffer package.
+
+It is generated from these files:
+       	example/human.proto
+
+It has these top-level messages:
+       	Test
+*/
+package example
+
+import proto &amp;quot;github.com/golang/protobuf/proto&amp;quot;
+import fmt &amp;quot;fmt&amp;quot;
+import math &amp;quot;math&amp;quot;
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
+type FOO int32
+
+const (
+       	FOO_X FOO = 17
+)
+
+var FOO_name = map[int32]string{
+       	17: &amp;quot;X&amp;quot;,
+}
+var FOO_value = map[string]int32{
+       	&amp;quot;X&amp;quot;: 17,
+}
+
+func (x FOO) Enum() *FOO {
+       	p := new(FOO)
+       	*p = x
+       	return p
+}
+func (x FOO) String() string {
+       	return proto.EnumName(FOO_name, int32(x))
+}
+func (x *FOO) UnmarshalJSON(data []byte) error {
+       	value, err := proto.UnmarshalJSONEnum(FOO_value, data, &amp;quot;FOO&amp;quot;)
+       	if err != nil {
+       		return err
+       	}
+       	*x = FOO(value)
+       	return nil
+}
+func (FOO) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+type Test struct {
+       	Label            *string             `protobuf:&amp;quot;bytes,1,req,name=label&amp;quot; json:&amp;quot;label,omitempty&amp;quot;`
+       	Type             *int32              `protobuf:&amp;quot;varint,2,opt,name=type,def=77&amp;quot; json:&amp;quot;type,omitempty&amp;quot;`
+       	Reps             []int64             `protobuf:&amp;quot;varint,3,rep,name=reps&amp;quot; json:&amp;quot;reps,omitempty&amp;quot;`
+       	Optionalgroup    *Test_OptionalGroup `protobuf:&amp;quot;group,4,opt,name=OptionalGroup,json=optionalgroup&amp;quot; json:&amp;quot;optionalgroup,omitempty&amp;quot;`
+       	XXX_unrecognized []byte              `json:&amp;quot;-&amp;quot;`
+}
+
+func (m *Test) Reset()                    { *m = Test{} }
+func (m *Test) String() string            { return proto.CompactTextString(m) }
+func (*Test) ProtoMessage()               {}
+func (*Test) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+const Default_Test_Type int32 = 77
+
+func (m *Test) GetLabel() string {
+       	if m != nil &amp;amp;&amp;amp; m.Label != nil {
+       		return *m.Label
+       	}
+       	return &amp;quot;&amp;quot;
+}
+
+func (m *Test) GetType() int32 {
+       	if m != nil &amp;amp;&amp;amp; m.Type != nil {
+       		return *m.Type
+       	}
+       	return Default_Test_Type
+}
+
+func (m *Test) GetReps() []int64 {
+       	if m != nil {
+       		return m.Reps
+       	}
+       	return nil
+}
+
+func (m *Test) GetOptionalgroup() *Test_OptionalGroup {
+       	if m != nil {
+       		return m.Optionalgroup
+       	}
+       	return nil
+}
+
+type Test_OptionalGroup struct {
+       	RequiredField    *string `protobuf:&amp;quot;bytes,5,req,name=RequiredField,json=requiredField&amp;quot; json:&amp;quot;RequiredField,omitempty&amp;quot;`
+       	XXX_unrecognized []byte  `json:&amp;quot;-&amp;quot;`
+}
+
+func (m *Test_OptionalGroup) Reset()                    { *m = Test_OptionalGroup{} }
+func (m *Test_OptionalGroup) String() string            { return proto.CompactTextString(m) }
+func (*Test_OptionalGroup) ProtoMessage()               {}
+func (*Test_OptionalGroup) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
+
+func (m *Test_OptionalGroup) GetRequiredField() string {
+       	if m != nil &amp;amp;&amp;amp; m.RequiredField != nil {
+       		return *m.RequiredField
+       	}
+       	return &amp;quot;&amp;quot;
+}
+
+func init() {
+       	proto.RegisterType((*Test)(nil), &amp;quot;example.Test&amp;quot;)
+       	proto.RegisterType((*Test_OptionalGroup)(nil), &amp;quot;example.Test.OptionalGroup&amp;quot;)
+       	proto.RegisterEnum(&amp;quot;example.FOO&amp;quot;, FOO_name, FOO_value)
+}
+
+func init() { proto.RegisterFile(&amp;quot;example/human.proto&amp;quot;, fileDescriptor0) }
+
+var fileDescriptor0 = []byte{
+       	// 200 bytes of a gzipped FileDescriptorProto
+       	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x4e, 0xad, 0x48, 0xcc,
+       	0x2d, 0xc8, 0x49, 0xd5, 0xcf, 0x28, 0xcd, 0x4d, 0xcc, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17,
+       	0x62, 0x87, 0x0a, 0x2a, 0x1d, 0x62, 0xe4, 0x62, 0x09, 0x49, 0x2d, 0x2e, 0x11, 0x12, 0xe1, 0x62,
+       	0xcd, 0x49, 0x4c, 0x4a, 0xcd, 0x91, 0x60, 0x54, 0x60, 0xd2, 0xe0, 0x0c, 0x82, 0x70, 0x84, 0xc4,
+       	0xb8, 0x58, 0x4a, 0x2a, 0x0b, 0x52, 0x25, 0x98, 0x14, 0x18, 0x35, 0x58, 0xad, 0x98, 0xcc, 0xcd,
+       	0x83, 0xc0, 0x7c, 0x21, 0x21, 0x2e, 0x96, 0xa2, 0xd4, 0x82, 0x62, 0x09, 0x66, 0x05, 0x66, 0x0d,
+       	0xe6, 0x20, 0x30, 0x5b, 0xc8, 0x91, 0x8b, 0x37, 0xbf, 0xa0, 0x24, 0x33, 0x3f, 0x2f, 0x31, 0x27,
+       	0xbd, 0x28, 0xbf, 0xb4, 0x40, 0x82, 0x45, 0x81, 0x51, 0x83, 0xcb, 0x48, 0x5a, 0x0f, 0x6a, 0x97,
+       	0x1e, 0xc8, 0x1e, 0x3d, 0x7f, 0xa8, 0x12, 0x77, 0x90, 0x92, 0x20, 0x54, 0x1d, 0x52, 0xa6, 0x5c,
+       	0xbc, 0x28, 0xf2, 0x42, 0x2a, 0x5c, 0xbc, 0x41, 0xa9, 0x85, 0xa5, 0x99, 0x45, 0xa9, 0x29, 0x6e,
+       	0x99, 0xa9, 0x39, 0x29, 0x12, 0xac, 0x60, 0xd7, 0xf1, 0x16, 0x21, 0x0b, 0x6a, 0xf1, 0x70, 0x31,
+       	0xbb, 0xf9, 0xfb, 0x0b, 0xb1, 0x72, 0x31, 0x46, 0x08, 0x08, 0x02, 0x02, 0x00, 0x00, 0xff, 0xff,
+       	0x89, 0x47, 0xa8, 0x4e, 0xf1, 0x00, 0x00, 0x00,
+}
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>How to Use Captcha in Beego Correct</title>
+      <link>http://hackez.github.io/how2use-captcha-in-beego/</link>
+      <pubDate>Thu, 01 Sep 2016 18:45:49 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/how2use-captcha-in-beego/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;最近在做 Beego 的 Web 网站开发，主题是 &lt;code&gt;个人词典&lt;/code&gt; ，项目地址 &lt;a href=&#34;https://github.com/HackeZ/Personal-Dictionary&#34;&gt;点我&lt;/a&gt; 。
+在关于 Beego 的验证码使用方法上出现了问题，后面通过阅读 Beego 的源码解决了该问题，下面来详细讲诉一下。&lt;/p&gt;
+
+&lt;h2 id=&#34;problem&#34;&gt;Problem&lt;/h2&gt;
+
+&lt;p&gt;先来看看错误的代码吧&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// ...
+var cpt *captcha.Captcha
+
+func (c *MainController) Login () {
+    // ...
+    // Get Verification Code.
+    store = cache.NewMemoryCache()
+    cpt = captcha.NewWithFilter(&amp;quot;/captcha/&amp;quot;, store)
+	cpt.ChallengeNums, _ = beego.AppConfig.Int(&amp;quot;captcha_length&amp;quot;)
+	cpt.StdWidth = 100
+	cpt.StdHeight = 42
+
+    c.TplName = &amp;quot;login.tpl&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这样写出现的问题是，开启服务器之后，只有第一次输入的验证码是正确的，一旦刷新页面或者已经登录之后，无论再次怎么进行登录都是 &lt;code&gt;验证码不正确&lt;/code&gt; 的错误。
+甚至在很多情况下都会出现验证码图片显示不出来。&lt;/p&gt;
+
+&lt;h2 id=&#34;solve&#34;&gt;Solve&lt;/h2&gt;
+
+&lt;p&gt;其实很容易就可以想到是 Cache 模块而导致的问题，因为 Beego 的 Memory Cache 从源代码中看其实就是一个存放在内存的 &lt;code&gt;Map&lt;/code&gt; ，而且该 &lt;code&gt;Map&lt;/code&gt; 是带生存周期的。所以应该将 &lt;code&gt;Cache&lt;/code&gt; 设置为一个全局变量，那么才能可以让 &lt;code&gt;Captcha&lt;/code&gt; 每次都能到正确的内存地址中的 Map 存取数据。而不是每次访问都新建一次 &lt;code&gt;Cache&lt;/code&gt; 。&lt;/p&gt;
+
+&lt;p&gt;正确的用法如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// ...
+var cpt *captcha.Captcha
+var store cache.Cache
+
+func (c *MainController) Login () {
+    // ...
+    // Get Verification Code.
+    cpt = captcha.NewWithFilter(&amp;quot;/captcha/&amp;quot;, store)
+	cpt.ChallengeNums, _ = beego.AppConfig.Int(&amp;quot;captcha_length&amp;quot;)
+	cpt.StdWidth = 100
+	cpt.StdHeight = 42
+
+    c.TplName = &amp;quot;login.tpl&amp;quot;
+}
+
+func init() {
+    store = cache.NewMemoryCache()
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这样，无论是怎么折腾该验证码， &lt;code&gt;Captcha&lt;/code&gt; 都能到正确的 &lt;code&gt;Map&lt;/code&gt; 中进行操作，一切的问题都解决了。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Fun in Docker Day-2</title>
+      <link>http://hackez.github.io/fun-in-docker-2/</link>
+      <pubDate>Wed, 31 Aug 2016 19:17:28 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/fun-in-docker-2/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;今天来详细讲一下之前没有讲清楚的 Docker 镜像打包方法。&lt;/p&gt;
+
+&lt;h2 id=&#34;page-command&#34;&gt;Page Command&lt;/h2&gt;
+
+&lt;p&gt;我们都知道，打包 Docker 应用有两种方式：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;在已经存在的 images 中 commit 修改。&lt;/li&gt;
+&lt;li&gt;创建一个全新的 images 。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;这两种方法各有优缺点。下面都来说一下怎么进行操作。&lt;/p&gt;
+
+&lt;h2 id=&#34;way-one&#34;&gt;Way One&lt;/h2&gt;
+
+&lt;p&gt;在已有的 images 中修改并 commit&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;优点：
+
+&lt;ul&gt;
+&lt;li&gt;这是最方便快捷的方法&lt;/li&gt;
+&lt;li&gt;可以避免自己打包而导致出现的一些问题，如静态文件引用错误等&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;缺点：
+
+&lt;ul&gt;
+&lt;li&gt;可定制程度低&lt;/li&gt;
+&lt;li&gt;打包出来的镜像文件可能会很大，不利于存储&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;在 Docker 官网的文档中已经很详细操作过了，下面的是我翻译的版本。具体的官方英文&lt;a href=&#34;https://docs.docker.com/engine/tutorials/dockerimages/#/updating-and-committing-an-image&#34;&gt;点我&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;首先你需要一个 images 才能进行更新操作呀，所以首先：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;#   获取 images
+$ docker pull training/sinatra
+#   运行 images 并进入到命令行中
+$ docker run -t -i training/sinatra /bin/bash
+root@0b2616b0e5a8:/#
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;记住这个被创建容器的 ID， &lt;code&gt;0b2616b0e5a8&lt;/code&gt; ，一会你会用得上的。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;接上面的操作&amp;hellip;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;#   首先更新一下 Ruby
+root@0b2616b0e5a8:/# apt-get install -y ruby2.0-dev
+#   然后安装  gem  json
+root@0b2616b0e5a8:/# gem2.0 install json
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;完成了这些更改之后，你可以运行 &lt;code&gt;exit&lt;/code&gt; 命令退出。&lt;/p&gt;
+
+&lt;p&gt;现在你可以像使用 &lt;code&gt;git&lt;/code&gt; 一样更新这个镜像了：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;#   &#39;-m&#39; &#39;-a&#39; 这些看起来很熟悉啦，和 git 中是一样的，就不再说了...
+$ docker commit -m &amp;quot;Added json gem&amp;quot; -a &amp;quot;Kate Smith&amp;quot; \
+0b2616b0e5a8 ouruser/sinatra:v2
+
+4f177bd27a9ff0f6dc2a830403925b5360bfe0b93d476f7fc3231110e7f71b1c
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后运行一下 &lt;code&gt;docker images&lt;/code&gt; 来看看新创建的容器吧&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ docker images
+
+REPOSITORY          TAG     IMAGE ID       CREATED       SIZE
+training/sinatra    latest  5bc342fa0b91   10 hours ago  446.7 MB
+ouruser/sinatra     v2      3c59e02ddd1a   10 hours ago  446.7 MB
+ouruser/sinatra     latest  5db5f8471261   10 hours ago  446.7 MB
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;way-two&#34;&gt;Way Two&lt;/h2&gt;
+
+&lt;p&gt;完全创建一个新的 images 是很多人第一时间就想做的，但是官网简介中并没有太多详细标注的细节，那么我就以我的第一视角讲诉一下我是怎么创建一个全新的  images 的。&lt;/p&gt;
+
+&lt;p&gt;依然是 Go ，首先创建一个简单的读取文件内容的项目：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ cd $GOPATH/src
+$ mkdir File_Reader
+$ vim File_Reader/main.go
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;源代码如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
+
+import (
+	&amp;quot;bufio&amp;quot;
+	&amp;quot;fmt&amp;quot;
+	&amp;quot;io&amp;quot;
+	&amp;quot;log&amp;quot;
+	&amp;quot;os&amp;quot;
+)
+
+func main() {
+	file, err := os.OpenFile(&amp;quot;./file.txt&amp;quot;, os.O_RDONLY, os.ModePerm)
+	defer file.Close()
+
+	if err != nil {
+		log.Println(&amp;quot;file.txt open false!&amp;quot;)
+	}
+
+	fileReader := bufio.NewReader(file)
+
+	for {
+		line, err := fileReader.ReadString(&#39;\n&#39;)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Println(&amp;quot;Read File Content Failed!&amp;quot;, err.Error())
+			return
+		}
+		fmt.Println(line)
+	}
+
+	fmt.Println(&amp;quot;File Read Done!&amp;quot;)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;接下来就是在当前目录下创建一个 &lt;code&gt;file.txt&lt;/code&gt; ，然后输入你想要的内容进去。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ &amp;quot;xxxxxx&amp;quot; &amp;gt;&amp;gt; file.txt
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;接下来就需要先将源代码文件编译成二进制文件，因为如果我们希望这个 images 越小，越少的编译环境可以达到更好的效果。
+命令如之前一样：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后你可以看到当前目录下出现了一个 &lt;code&gt;main&lt;/code&gt; 的可执行文件。&lt;/p&gt;
+
+&lt;p&gt;重要的步骤来了，当前目录下创建一个 &lt;code&gt;Dockerfile&lt;/code&gt; 文件，输入如下内容：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FROM scratch
+MAINTAINER HackerZ
+ADD main /
+ADD file.txt /
+CMD [&amp;quot;/main&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;我来解释一下这些都是什么意思：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;FROM : Docker 用来指定该镜像是基于哪个基础镜像构建的&lt;/li&gt;
+&lt;li&gt;MAINTAINER : 镜像创建人的名字&lt;/li&gt;
+&lt;li&gt;ADD  : 从 Dockerfile 所在目录拷贝文件到指定路径下&lt;/li&gt;
+&lt;li&gt;CMD  : 用来指示当运行 &lt;code&gt;docker run&lt;/code&gt; 命令运行该镜像时要执行的命令&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;其余的还有：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;EXPOSE : 开放的网络端口号&lt;/li&gt;
+&lt;li&gt;ENV    : 设置环境变量&lt;/li&gt;
+&lt;li&gt;VOLUME : 可以将本地文件夹或者其他容器的文件夹挂载到该容器中。&lt;/li&gt;
+&lt;li&gt;WORKDIR: 切换目录用，可以多次切换(相当于cd命令)，对RUN,CMD,ENTRYPOINT生效&lt;/li&gt;
+&lt;li&gt;ONBUILD: ONBUILD 指定的命令在构建镜像时并不执行，而是在它的子镜像中执行&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;好了，运行 &lt;code&gt;docker build -t fileReader .&lt;/code&gt; 创建全新的 images 吧。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Fun in Docker Day-1</title>
+      <link>http://hackez.github.io/fun-in-docker-1/</link>
+      <pubDate>Sat, 20 Aug 2016 16:17:42 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/fun-in-docker-1/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;今天心血来潮，想在 OSX 中重新体验一下 &lt;code&gt;Docker&lt;/code&gt;，结果因为 &lt;code&gt;Docker&lt;/code&gt; 是基于 &lt;code&gt;Linux&lt;/code&gt;，在 OSX 中实在是 Fun 不起来，于是便纪录下来这天的过程。&lt;/p&gt;
+
+&lt;h2 id=&#34;install&#34;&gt;Install&lt;/h2&gt;
+
+&lt;p&gt;这部分没什么好说的， &lt;code&gt;Docker&lt;/code&gt; 官方已经出了 &lt;a href=&#34;https://docs.docker.com/docker-for-mac/&#34;&gt;OSX&lt;/a&gt; 的安装包，直接下载拖进 &lt;code&gt;Application/&lt;/code&gt; 即可完成安装。&lt;/p&gt;
+
+&lt;p&gt;安装完成之后，可以直接在命令行中运行：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ docker --version  # Docker 主体
+$ docker-compose --version  # 定义和管理复杂 Docker 应用的工具
+$ docker-machine --version  # 简化 Docker 安装的工具
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;查看所有的安装工具是否能够正确启动。&lt;/p&gt;
+
+&lt;p&gt;之后，便可以尝试运行 &lt;code&gt;Hello World&lt;/code&gt; 和 &lt;code&gt;nginx&lt;/code&gt; 玩一下了。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# Hello World
+$ docker run hello-world
+
+# nginx
+$ docker run -d -p 80:80 --name webserver nginx
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;package&#34;&gt;Package&lt;/h2&gt;
+
+&lt;p&gt;以我的开源项目 &lt;a href=&#34;https://www.github.com/HackeZ/getMeizi&#34;&gt;getMeizi&lt;/a&gt; 为例子尝试打包 &lt;code&gt;Golang应用&lt;/code&gt; 。&lt;/p&gt;
+
+&lt;h4 id=&#34;first-try&#34;&gt;First Try&lt;/h4&gt;
+
+&lt;p&gt;首先我在项目的根目录下编写了一个 &lt;code&gt;Dockerfile&lt;/code&gt; 文件，其内容为：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FROM golang:onbuild
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后通过 &lt;code&gt;$ docker build -t getmeizi .&lt;/code&gt; 来构建一个镜像。&lt;/p&gt;
+
+&lt;p&gt;但是这样构建的镜像会将 &lt;code&gt;Golang&lt;/code&gt; 的整个环境都打包进去，生成的镜像大小为 &lt;code&gt;832.5 MB&lt;/code&gt; 。&lt;/p&gt;
+
+&lt;p&gt;很显然我们会更加愿意得到一个更灵活小巧的镜像，于是，我的目光转向了 &lt;code&gt;scratch&lt;/code&gt; 。&lt;/p&gt;
+
+&lt;h4 id=&#34;second-try&#34;&gt;Second Try&lt;/h4&gt;
+
+&lt;p&gt;修改 &lt;code&gt;Dockerfile&lt;/code&gt; 文件内容为：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FROM scratch
+ADD main /
+CMD [&amp;quot;/main&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后先将 &lt;code&gt;getMeizi&lt;/code&gt; 应用编译完：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;最后使用 &lt;code&gt;$ docker build -t getmeizi .&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;构建即可生成一个仅有 &lt;code&gt;5.83 MB&lt;/code&gt; 大小的镜像。&lt;/p&gt;
+
+&lt;h2 id=&#34;push&#34;&gt;Push&lt;/h2&gt;
+
+&lt;p&gt;最后将打包好的镜像发布到 &lt;strong&gt;Docker.io&lt;/strong&gt; 中：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ docker images
+# REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+# getmeizi            latest              7ddcbed63a17        2 minutes ago         5.839 MB
+
+$ docker tag 7ddcbed63a17 hackerz/getmeizi
+
+$ docker images
+# REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+# getmeizi            latest              7ddcbed63a17        3 minutes ago         5.839 MB
+# hackerz/getmeizi    latest              7ddcbed63a17        3 minutes ago         5.839 MB
+
+$ docker login
+# ***
+# Login Succeeded
+
+$ docker push hackerz/getmeizi
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;打开 &lt;a href=&#34;https://hub.docker.com/r/hackerz/getmeizi/&#34;&gt;hackerz/getmeizi&lt;/a&gt; 查看并编辑镜像描述。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Global Ignore File in Git</title>
+      <link>http://hackez.github.io/global_gitignore/</link>
+      <pubDate>Thu, 18 Aug 2016 16:03:05 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/global_gitignore/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;自从换了 OSX 进行开发，就发现每当修改了项目文件， OSX 在项目目录都会生成一个 &lt;code&gt;.DS_Store&lt;/code&gt; 的隐藏文件，该文件用于记录当前目录下文件的 Meta 信息。&lt;/p&gt;
+
+&lt;p&gt;对于这样的情况，我不可能在每个项目的根目录都配置一个 &lt;code&gt;.gitignore&lt;/code&gt; 文件，这样可复用性太地了，于是我便想能不能配置一个 Git 的 &lt;code&gt;.gitignore_global&lt;/code&gt; 文件，统一忽略掉所有我不需要上传的文件呢。&lt;/p&gt;
+
+&lt;h2 id=&#34;solve&#34;&gt;Solve&lt;/h2&gt;
+
+&lt;p&gt;Git 还真有这样的方法，它提供了一个 &lt;strong&gt;忽略规则&lt;/strong&gt; ，我们可以通过编写一个忽略规则文件，然后通过如下的命令配置进 Git :&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ git config --global core.excludesfile &#39;忽略文件完整路径&#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;即可。&lt;/p&gt;
+
+&lt;h2 id=&#34;global-gitignore&#34;&gt;Global GitIgnore&lt;/h2&gt;
+
+&lt;p&gt;新建一个 &lt;code&gt;.gitignore_global&lt;/code&gt; 文件，并往里面编写忽略文件语法，该语法符合正则表达式， &lt;code&gt;#&lt;/code&gt; 号为注释，每一行为一个忽略规则：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# OSX
+.DS_Store
+.DS_Store*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python
+*.pyc
+
+# C
+*.[ao]
+
+# Package
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>How To Install Scikit-learn Under OSX 10.11</title>
+      <link>http://hackez.github.io/how-2-install-scikit-learn/</link>
+      <pubDate>Mon, 15 Aug 2016 22:49:10 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/how-2-install-scikit-learn/</guid>
+      <description>
+
+&lt;h1 id=&#34;如何在osx下安装正确安装-scikit-learn&#34;&gt;如何在osx下安装正确安装 scikit-learn&lt;/h1&gt;
+
+&lt;h3 id=&#34;使用-anaconda&#34;&gt;使用 Anaconda&lt;/h3&gt;
+
+&lt;p&gt;&lt;code&gt;Anaconda&lt;/code&gt; 是一个 Python 的集成科学计算环境，一键安装，方便好用。但是当我安装之后发现其只有自带了：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;numpy&lt;/li&gt;
+&lt;li&gt;scipy&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;而并没有 &lt;code&gt;scikit-learn&lt;/code&gt;，然后当我使用&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;conda install scikit-learn
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;进行安装之后发现还是无法使用这个缺省的库，经我多方查找资料，原来是 &lt;code&gt;Mac 10.11&lt;/code&gt; 版本中自带的 &lt;code&gt;Python 2.7&lt;/code&gt; 环境与 &lt;code&gt;Anaconda&lt;/code&gt; 的环境是分离的，所以只能 &lt;code&gt;Anaconda&lt;/code&gt; 中使用这些库。&lt;/p&gt;
+
+&lt;p&gt;然而这是我不太喜欢的一种方式，所以我放弃了，转而研究在 &lt;code&gt;Mac&lt;/code&gt; 自带的 Python 环境中安装。&lt;/p&gt;
+
+&lt;h3 id=&#34;解除-osx-10-11-的-sip-限制&#34;&gt;解除 OSX 10.11 的 ｀SIP｀ 限制&lt;/h3&gt;
+
+&lt;p&gt;当我开始用 &lt;code&gt;pip&lt;/code&gt; 安装第三方包的时候出现了如下的错误：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;Collecting numpy
+
+Using cached numpy-1.10.2-cp27-none-macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.whlInstalling
+ collected packages: numpy
+ Found existing installation: numpy 1.8.0rc1
+ DEPRECATION: Uninstalling a distutils installed project (numpy) has been deprecated and will be removed in a future version. This is due to the fact that uninstalling a distutils project will only partially uninstall the project.
+ Uninstalling numpy-1.8.0rc1:Exception:Traceback
+ (most recent call last):
+ File &amp;quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/basecommand.py&amp;quot;, line 211, in main
+ status = self.run(options, args)
+ File &amp;quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/commands/install.py&amp;quot;, line 311, in run
+ root=options.root_path,
+ File &amp;quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_set.py&amp;quot;, line 640, in install
+ requirement.uninstall(auto_confirm=True)
+ File &amp;quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_install.py&amp;quot;, line 716, in uninstall
+ paths_to_remove.remove(auto_confirm)
+ File &amp;quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/req/req_uninstall.py&amp;quot;, line 125, in remove
+ renames(path, new_path)
+ File &amp;quot;/Library/Python/2.7/site-packages/pip-7.1.2-py2.7.egg/pip/utils/__init__.py&amp;quot;,
+ line 315, in renames
+shutil.move(old, new)
+ File &amp;quot;/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py&amp;quot;, line 302, in move
+ copy2(src, real_dst)
+ File &amp;quot;/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py&amp;quot;, line 131, in copy2
+ copystat(src, dst)
+ File &amp;quot;/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/shutil.py&amp;quot;, line 103, in copystat
+ os.chflags(dst, st.st_flags)OSError:
+ [Errno 1] Operation not permitted: &#39;/var/folders/5n/vbm997m56xg3kw67y6bccn2m0000gn/T/pip-4tcBsd-uninstall/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy-1.8.0rc1-py2.7.egg-info&#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;仔细一看，发现了 &lt;code&gt;Operation not permitted&lt;/code&gt; 的错误。&lt;/p&gt;
+
+&lt;p&gt;经过 Google ，发现了原来是 Apple 经历了 &lt;code&gt;XCode编译器注入&lt;/code&gt; 事件之后，提升了 &lt;code&gt;Mac OS X El Capitan系统&lt;/code&gt; 的安全保护机制，加入了：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;System Integrity Protection (SIP)
+—— 系统完整性保护，其作用为强制性地保护系统相关的文件夹，开发者不能直接操作相关的文件内容。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;而 Python 库所在的路径为：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;/System/Library/Frameworks/Python.framework/Versions/2.7/...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当然是属于其完整性保护的保护伞之下的，所以我需要把 &lt;code&gt;SIP&lt;/code&gt; 关掉之后才能对其进行安装。&lt;/p&gt;
+
+&lt;p&gt;引用外国大牛的关闭 SIP 的方法如下：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Click the  menu.&lt;/li&gt;
+&lt;li&gt;Select &lt;code&gt;Restart&lt;/code&gt; …&lt;/li&gt;
+&lt;li&gt;Hold down &lt;code&gt;command-R&lt;/code&gt; to boot into the Recovery System.&lt;/li&gt;
+&lt;li&gt;Click the &lt;code&gt;Utilities menu&lt;/code&gt; and select &lt;code&gt;Terminal&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Type &lt;code&gt;csrutil disable&lt;/code&gt; and press &lt;code&gt;return&lt;/code&gt; .&lt;/li&gt;
+&lt;li&gt;Close the &lt;code&gt;Terminal&lt;/code&gt; app.&lt;/li&gt;
+&lt;li&gt;Click the  menu and select &lt;code&gt;Restart&lt;/code&gt; … .&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;当然在安装完成之后最好还是将 SIP 重新打开：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Click the  menu.&lt;/li&gt;
+&lt;li&gt;Select &lt;code&gt;Restart&lt;/code&gt; …&lt;/li&gt;
+&lt;li&gt;Hold down &lt;code&gt;command-R&lt;/code&gt; to boot into the Recovery System.&lt;/li&gt;
+&lt;li&gt;Click the &lt;code&gt;Utilities menu&lt;/code&gt; and select &lt;code&gt;Terminal&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Type &lt;code&gt;csrutil enable&lt;/code&gt; and press &lt;code&gt;return&lt;/code&gt; .&lt;/li&gt;
+&lt;li&gt;Close the &lt;code&gt;Terminal&lt;/code&gt; app.&lt;/li&gt;
+&lt;li&gt;Click the  menu and select &lt;code&gt;Restart&lt;/code&gt; … .&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;安装-scikit-learn-的正确姿势&#34;&gt;安装 scikit-learn 的正确姿势&lt;/h3&gt;
+
+&lt;p&gt;好吧，终于解决了上面这些问题了，安装应该没有问题了吧？很可惜，当我运行完：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ sudo pip install numpy
+$ sudo pip install scipy
+$ sudo pip install scikit-learn
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后在 &lt;code&gt;Python&lt;/code&gt; 下 &lt;code&gt;import sklearn&lt;/code&gt; 时发生了如下错误：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;Traceback (most recent call last):
+File &amp;quot;&amp;lt;stdin&amp;gt;&amp;quot;, line 1, in &amp;lt;module&amp;gt;
+File &amp;quot;/Library/Python/2.7/site-packages/sklearn/__init__.py&amp;quot;, line 57, in &amp;lt;module&amp;gt;
+from .base import clone
+File &amp;quot;/Library/Python/2.7/site-packages/sklearn/base.py&amp;quot;, line 11, in &amp;lt;module&amp;gt;
+from .utils.fixes import signature
+File &amp;quot;/Library/Python/2.7/site-packages/sklearn/utils/__init__.py&amp;quot;, line 10, in &amp;lt;module&amp;gt;
+from .murmurhash import murmurhash3_32
+File &amp;quot;numpy.pxd&amp;quot;, line 155, in init sklearn.utils.murmurhash (sklearn/utils/murmurhash.c:5029)
+ValueError: numpy.dtype has the wrong size, try recompiling
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;好惨，经过多方搜索，绝大部分的解答都是：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ pip uninstall numpy scipy scikit-learn
+$ pip install numpy scipy scikit-learn
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然而都并没有什么卵用，最后在这里找到了解决办法 =&amp;gt; &lt;a href=&#34;http://scikit-learn-general.narkive.com/kMA6mRCk/valueerror-numpy-dtype-has-the-wrong-size-try-recompiling&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;其方法时不要使用 &lt;code&gt;pip install scikit-learn&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;而是到 Github 中找到 &lt;a href=&#34;https://github.com/scikit-learn/scikit-learn&#34;&gt;scikit-learn&lt;/a&gt; 项目进行安装：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ git clone https://github.com/scikit-learn/scikit-learn.git
+$ sudo python setup.py install
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;等待几分钟，安装完成，大功告成～&lt;/p&gt;
+
+&lt;h3 id=&#34;参考网站&#34;&gt;参考网站：&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;在 osx 10.11 下解除 pip 权限安装 =&amp;gt; &lt;a href=&#34;http://blog.csdn.net/shi_weihappy/article/details/50938486&#34;&gt;参考地址&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;如何正确安装scikit-learn =&amp;gt; &lt;a href=&#34;http://www.tuicool.com/articles/aEJriuY&#34;&gt;参考地址&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Golang Package Dependency Management Tool</title>
+      <link>http://hackez.github.io/golang-package-dependency-management-tool/</link>
+      <pubDate>Sun, 07 Aug 2016 11:11:25 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/golang-package-dependency-management-tool/</guid>
+      <description>
+
+&lt;h1 id=&#34;golang-package-dependency-management-tool&#34;&gt;Golang Package Dependency Management Tool&lt;/h1&gt;
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;Golang一直以来被外界诟病的一个问题就是包的依赖管理问题。那么今天就来讲一个：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Golang包依赖管理工具 —— gb&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;gb 在其官网中定义自己为：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;A project based build tool for the Go programming language.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;一个Golang的项目工程通常由 &lt;code&gt;bin&lt;/code&gt;、&lt;code&gt;pkg&lt;/code&gt;、&lt;code&gt;src&lt;/code&gt;三个子目录构成：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;bin : 存放编译后生成的可执行文件&lt;/li&gt;
+&lt;li&gt;pkg : 编译后生成的文件（如：.a）&lt;/li&gt;
+&lt;li&gt;src : 存放源代码（如：.go .c .h .s等）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;而 &lt;code&gt;gb&lt;/code&gt; 在这个概念的基础上新增了一个 &lt;code&gt;vendor&lt;/code&gt; 目录来存放项目依赖的第三方包（如 &lt;em&gt;beego&lt;/em&gt; ，&lt;em&gt;gracehttp&lt;/em&gt; 等）&lt;/p&gt;
+
+&lt;h2 id=&#34;gb-action&#34;&gt;gb action&lt;/h2&gt;
+
+&lt;h4 id=&#34;install&#34;&gt;Install&lt;/h4&gt;
+
+&lt;p&gt;gb ==&amp;gt; &lt;a href=&#34;https://getgb.io/&#34;&gt;首页&lt;/a&gt;  ==&amp;gt;  &lt;a href=&#34;https://github.com/constabulary/gb/&#34;&gt;Github&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;根据说明，使用&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ go get github.com/constabulary/gb/...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;命令即可安装 gb。&lt;/p&gt;
+
+&lt;p&gt;当该命令运行完毕，请检查 &lt;code&gt;env&lt;/code&gt; 下的第一个 &lt;code&gt;$GOPATH&lt;/code&gt; 的 &lt;code&gt;bin&lt;/code&gt; 目录下是否生成了 &lt;code&gt;gb&lt;/code&gt; 以及 &lt;code&gt;gb-vendor&lt;/code&gt; 两个可执行文件。&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;如安装报错，请检查你是否正确配置了 $GOPATH 等环境变量。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&#34;use&#34;&gt;Use&lt;/h4&gt;
+
+&lt;p&gt;下面试着使用 &lt;code&gt;gb&lt;/code&gt; 来构建一个基于第三方包 &lt;code&gt;gracehttp&lt;/code&gt; 的简易 Golang Web 项目，来体验一下 &lt;code&gt;gb&lt;/code&gt; 的魅力。&lt;/p&gt;
+
+&lt;p&gt;首先初始化 &lt;code&gt;hellogb&lt;/code&gt; 项目目录结构：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ cd $GOPATH/src/hellogb
+$ mkdir -p src/hellogb
+$ mkdir -p vendor/src
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;编写 Web 程序：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// vim src/hellogb/main.go
+package main
+
+import (
+    &amp;quot;fmt&amp;quot;
+    &amp;quot;net/http&amp;quot;
+
+    &amp;quot;github.com/tabalt/gracehttp&amp;quot;
+)
+
+func main() {
+    http.HandleFunc(&amp;quot;/&amp;quot;, func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, &amp;quot;hello gb&amp;quot;)
+    })
+
+    err := gracehttp.ListenAndServe(&amp;quot;:8080&amp;quot;, nil)
+    if err != nil {
+        fmt.Println(err)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;使用 &lt;code&gt;gb&lt;/code&gt; 添加依赖的 &lt;code&gt;gracehttp&lt;/code&gt; 第三方包：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ gb vendor fetch github.com/tabalt/gracehttp
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;最终整个项目目录结构为：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;./
+|-- src
+|   `-- hellogb
+|       `-- main.go
+`-- vendor
+    |-- manifest
+    `-- src
+        `-- github.com
+            `-- tabalt
+                `-- gracehttp
+                    |-- README.md
+                    |-- connection.go
+                    |-- gracehttpdemo
+                    |   `-- main.go
+                    |-- listener.go
+                    `-- server.go
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;编译执行程序：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ gb build hellogb
+$ ./bin/hellogb
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;最后访问 &lt;code&gt;http://127.0.0.1:8080/&lt;/code&gt; 即可访问 Web 服务。&lt;/p&gt;
+
+&lt;h4 id=&#34;command&#34;&gt;Command&lt;/h4&gt;
+
+&lt;h5 id=&#34;gb-command&#34;&gt;gb Command&lt;/h5&gt;
+
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th align=&#34;left&#34;&gt;Command&lt;/th&gt;
+&lt;th align=&#34;center&#34;&gt;功能&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;build&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;编译包&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;vendor&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;调用 gb-vendor&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;doc&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;显示文档&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;env&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;打印项目的环境变量&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;generate&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;处理源代码生成Go文件&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;info&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;显示项目的信息&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;list&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;显示项目下的所有包&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;test&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;执行测试&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;hr /&gt;
+
+&lt;h5 id=&#34;gb-vendor-parameter&#34;&gt;gb vendor Parameter&lt;/h5&gt;
+
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th align=&#34;left&#34;&gt;Parameter&lt;/th&gt;
+&lt;th align=&#34;center&#34;&gt;功能&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;fetch&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;获取一个远程依赖&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;update&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;更新一个本地依赖&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;list&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;每行一个列出所有依赖&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;delete&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;删除一个本地依赖&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;purge&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;清除所有未引用的依赖&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td align=&#34;left&#34;&gt;restore&lt;/td&gt;
+&lt;td align=&#34;center&#34;&gt;从manifest清单文件还原依赖&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;本文参考 tabalt 的 &lt;a href=&#34;http://tabalt.net/blog/golang-package-dependency-management-tool-gb/&#34;&gt;Golang包依赖管理工具gb&lt;/a&gt; 一文。&lt;/p&gt;
+&lt;/blockquote&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>C Prefess Program Note</title>
+      <link>http://hackez.github.io/C-Prefess-Program/</link>
+      <pubDate>Sat, 30 Jul 2016 22:47:07 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/C-Prefess-Program/</guid>
+      <description>
+
+&lt;h1 id=&#34;c专家编程-笔记本&#34;&gt;《C专家编程》 笔记本&lt;/h1&gt;
+
+&lt;h3 id=&#34;c专家编程-是每一位程序员应该读的第二本c语言书籍&#34;&gt;《C专家编程》是每一位程序员应该读的第二本C语言书籍！&lt;/h3&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;讲了各种c的缺陷，推荐go用户好好体验，很多都在go里做了修正 —— [ggarlic]()&lt;/p&gt;
+
+&lt;p&gt;书很好，翻译一般，校对不负责任。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;新西兰&lt;/strong&gt; 是关于时间编程的一个特殊地点；&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;编译器设计者的金科玉律 &lt;strong&gt;效率（几乎）就是一切&lt;/strong&gt;；&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;B语言是 &lt;strong&gt;解释模式&lt;/strong&gt; 语言，而C语言是 &lt;strong&gt;编译模式并引入了类型系统&lt;/strong&gt; ，使效率大大提高；&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;C语言是为了 &lt;strong&gt;编译器设计者&lt;/strong&gt; 而生的，这就是为什么很多编程语言在初期都是使用C语言编译器的原因；&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;为什么数组 &lt;strong&gt;下标从0开始&lt;/strong&gt; ？&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;在计算资源缺乏的过去，0标号的写法可以节省编译时间&lt;/li&gt;
+&lt;li&gt;现代语言中0标号可以更优雅的表示数组字串&lt;/li&gt;
+&lt;li&gt;在支持指针的语言中，标号被视作是偏移量，因此从0开始更符合逻辑&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;将 &lt;strong&gt;常量放在比较表达式的前面&lt;/strong&gt; 可以大大减少因打字出错将 &lt;code&gt;==&lt;/code&gt; 输入为 &lt;code&gt;=&lt;/code&gt; 的情况 &lt;code&gt;if(3 == x) {...}&lt;/code&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Bourne Shell&lt;/strong&gt; 的出现促成了 The International Obfuscated C Code Competition（国际C语言混乱代码大赛）；&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;ANSI C&lt;/strong&gt; 美国国家标准化组织所定下的C语言标准；&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;语言律师 —— “可以从200多页的手册中提炼出5句话，并起来放到你面前，你只要一看就能明白自己问题答案的人”；&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;关键字 &lt;code&gt;const&lt;/code&gt; 并不能把变量变成常量！在一个符号前面加上 &lt;code&gt;const&lt;/code&gt; 只是表示这个符号不能被赋值，也就是变为 &lt;strong&gt;Read Only&lt;/strong&gt; 。其最有用之处在于限定函数的形参，这样该函数将不会修改实参指针所指的数据，但其他的（没有用 &lt;code&gt;const&lt;/code&gt; 的）函数却有可能修改它。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;尽量不要在你的程序中使用 &lt;strong&gt;无符号类型&lt;/strong&gt; ，以免增加不必要的复杂性。尤其是，不要仅仅因为其不存在负值（如年龄、 国债）而用它来表示数量。因为在某些情况下，会出现以下 BUG：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;-1 会被翻译成非常巨大的正整数。&lt;/li&gt;
+&lt;li&gt;-1 会比 1 大。&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;malloc(strlen(str))&lt;/code&gt; 几乎永远是错误的，因为 不要忘记还有 &lt;code&gt;&#39;\0&#39;&lt;/code&gt; ；&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;NUL  用于结束有一个 ASCII 码零的正确术语；
+NULL 用于表示什么都不指向；&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;如果需要使用一些临时变量的时候，请把它放在块的开始处！&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;缺省采用 &amp;ldquo;Fall Through&amp;rdquo;，在 &lt;strong&gt;97%&lt;/strong&gt; 的情况下都是错误的！&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;// Fall Through : End without break;
+switch (number) {
+case 1: printf(&amp;quot;case 1\n&amp;quot;);
+case 2: printf(&amp;quot;case 2\n&amp;quot;);
+case 3: printf(&amp;quot;case 3\n&amp;quot;);
+...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;一种简单的方法，使一段代码第一次执行时的行为与以后的执行的行为不同；&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;generate_initializer(char * string) 
+{
+static char separator = &#39; &#39;;
+printf(&amp;quot;%c %s\n&amp;quot;, separator, string);
+separator = &#39;,&#39;;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;重载之过：
+```c
+// 这是多少个乘号？
+p = N * sizeof * q;
+r = malloc(p);
+// 答案：1个，sizeof操作符将指针q指向的东西作为操作数，它返回q所指对象的类型的字节数&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;// 这是int的长度乘以p？还是把未知类型的指针强制转换为int？
+apple = sizeof(int) * p;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+18. 什么是 **结合性** ？
+
+&amp;gt; 在几个操作符具有相同优先级的时候决定先运行哪一个。
+
+19. 为什么要使用 fgets() 而不是 gets() ？
+
+20. 注释符缺陷：
+```c
+a //*
+//*/ b
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;means a/b in C but a in C++&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;早用line，勤用lint。当你做错事的时候，他会告诉你哪里不对，应该始终使用lint程序，按照它的道德标准办事。像使用 &lt;code&gt;go-lint&lt;/code&gt; 一样写出优秀的代码。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;将结构的声明与变量的定义分开可以使代码更加容易阅读：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;struct veg { int weight, price_per_lb; };
+struct veg onion, radish, turnip;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;union&lt;/code&gt; 与 &lt;code&gt;struct&lt;/code&gt; 不同的是：&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;在内存布局中，struct 是将每个成员依次存储，而在 union 中，所有的成员都从偏移地址零开始存储。这样，每个成员的位置都重叠在一起：在某个时刻，只有一个成员真正存储于该地址。&lt;/p&gt;
+
+&lt;p&gt;所以 union 一般用于节省空间，因为 有些数据是不可能同时出现的，如果同时存储他们，显然颇为浪費。可以将互斥的两个字段存储于一个 union 中来节省空间：&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;union secondary_characteristics {
+    char has_fur;
+    short num_of_leg_in_excess_of_4;
+};
+struct creature {
+    char has_backbone;
+    union secondary_characteristics form;
+};
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;这种方法在存储 2*10^7 只动物的时候可以节省 20MB 磁盘空间。&lt;/p&gt;
+
+&lt;p&gt;union 也可以将同一个数据解释成两个不同的东西：&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;union bits32_tag {
+    int whole;  /* 一个32位的值 */
+    struct {char c0, c1, c2, c3; } byte; /* 4个8位的字节 */
+} value;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;enum&lt;/code&gt; 也就是 Golang 中的 &lt;code&gt;toao&lt;/code&gt;：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;enum sizes { small = 7, medium, large = 10, humungous };
+// medium = 8 ; humungous = 11;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;理解C语言声明的优先级规则&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;A 声明从它的名字开始读取，然后按照优先级顺序依次读取。&lt;/li&gt;
+&lt;li&gt;B 优先级从高到低依次是：
+
+&lt;ul&gt;
+&lt;li&gt;1 声明中被括号括起来的那部分&lt;/li&gt;
+&lt;li&gt;2 后缀操作符：
+
+&lt;ul&gt;
+&lt;li&gt;括号 () 表示这是一个函数；&lt;/li&gt;
+&lt;li&gt;方括号 [] 表示这是一个数组；&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;3 前缀操作符：星号 * 表示 “指向&amp;hellip;的指针”&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;C 如果 const 和（或）volatie 关键字的后面紧跟类型说明符（如int，long等），那么它作用于类型说明符。在其他情况下，const 和（或）volatie关键字作用于它左边紧邻的指针星号。&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;char * const *(*next) ();
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;next 是一个指向函数的指针，该函数返回另一个指针，该指针指向一个只读的指向char的指针。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ol&gt;
+&lt;li&gt;使字符串的比较看上去更自然：&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;strcmp() 函数用于比较两个字符串，当他们相等返回 0&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;// 这看起来有点不符合语法
+if(!strcmp(s, &amp;quot;volatile&amp;quot;)) return QUALIFIER;
+
+// 也许我们可以这样做
+#define STRCMP(a, R, b) (strcmp(a, b) R 0)
+if(STRCMP(s, == , &amp;quot;volatile&amp;quot;))
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;数组与指针的区别： &lt;code&gt;P102&lt;/code&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>redigo : open too many files</title>
+      <link>http://hackez.github.io/redigo-open2manyfiles/</link>
+      <pubDate>Wed, 27 Jul 2016 13:29:11 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/redigo-open2manyfiles/</guid>
+      <description>
+
+&lt;h1 id=&#34;redigo-panic-error-open-too-many-files&#34;&gt;Redigo - panic error : open too many files.&lt;/h1&gt;
+
+&lt;h3 id=&#34;abstract&#34;&gt;Abstract&lt;/h3&gt;
+
+&lt;p&gt;今天对 &lt;a href=&#34;https://www.github.com/HackeZ/getAcFunPage&#34;&gt;getAcFunPage&lt;/a&gt; 项目做 Benchmark 的时候发现了 Redis 会频繁报一个 &lt;code&gt;socket: too many open files&lt;/code&gt; 的错误，后来发现并不是代码的问题，而是 Linux 的设置问题。
+下面就来说说我是这么解决这个问题的。&lt;/p&gt;
+
+&lt;h3 id=&#34;problem&#34;&gt;Problem&lt;/h3&gt;
+
+&lt;p&gt;Benchmark 时报错内容截取如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;http: panic serving 127.0.0.1:53512: dial tcp :6379: socket: too many open files
+goroutine 5322 [running]:
+net/http.(*conn).serve.func1(0xc820f87f80)
+    /usr/local/go/src/net/http/server.go:1389 +0xc1
+panic(0x797240, 0xc820b12050)
+    /usr/local/go/src/runtime/panic.go:426 +0x4e9
+main.GetPageAndJSON(0x0, 0x0)
+    /home/hackerzgz/workspace/golang/src/getAcFunPage/main.go:130 +0x20a
+main.HandleGetResp(0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /home/hackerzgz/workspace/golang/src/getAcFunPage/main.go:82 +0x18
+net/http.HandlerFunc.ServeHTTP(0x8902f0, 0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /usr/local/go/src/net/http/server.go:1618 +0x3a
+net/http.(*ServeMux).ServeHTTP(0xc820015740, 0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /usr/local/go/src/net/http/server.go:1910 +0x17d
+net/http.serverHandler.ServeHTTP(0xc82008a680, 0x7f2103407500, 0xc8212fb450, 0xc8210a68c0)
+    /usr/local/go/src/net/http/server.go:2081 +0x19e
+net/http.(*conn).serve(0xc820f87f80)
+    /usr/local/go/src/net/http/server.go:1472 +0xf2e
+created by net/http.(*Server).Serve
+    /usr/local/go/src/net/http/server.go:2137 +0x44e
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;出现这个错误的时候， &lt;code&gt;webbench&lt;/code&gt; 的参数为 &lt;code&gt;-c 300 -t 60&lt;/code&gt; ，也就是并发300个客户端访问并持续60s。&lt;/p&gt;
+
+&lt;p&gt;由报错信息第一行中的 &lt;code&gt;dial tcp :6379&lt;/code&gt; 很容易看出，这是由 Redis 所引起的错误。&lt;/p&gt;
+
+&lt;h3 id=&#34;why&#34;&gt;Why&lt;/h3&gt;
+
+&lt;p&gt;根据 &lt;a href=&#34;http://stackoverflow.com/questions/19971968/go-golang-redis-too-many-open-files-error&#34;&gt;Stack Overflow&lt;/a&gt; 上的一个回答，这是由于 Linux 下设置的 &lt;strong&gt;文件描述符上限(file descriptors limit)&lt;/strong&gt; 所引起的错误，在Ubuntu系统中，该值上限为 &lt;strong&gt;1024&lt;/strong&gt; ，于是当 Redis 需要接收来自高并发所带来的连接请求时，连接数很有可能 &lt;strong&gt;超出文件描述符的上限值&lt;/strong&gt; ，于是 Redis 就会报错了。&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;文件描述符:&lt;br /&gt;
+内核（kernel）利用文件描述符（file descriptor）来访问文件。文件描述符是非负整数。打开现存文件或新建文件时，内核会返回一个文件描述符。读写文件也需要使用文件描述符来指定待读写的文件。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&#34;solve&#34;&gt;Solve&lt;/h3&gt;
+
+&lt;p&gt;要解决这个问题也很简单，只需要将服务器系统的文件描述符上限修改成一个更大的值即可：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ ulimit -n 99999
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后还需要对 Redigo 的连接池设置做出修改：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;return &amp;amp;redis.Pool{
+		MaxIdle:     64,
+		IdleTimeout: 3 * time.Second,
+		MaxActive:   99999, // max number of connections
+		...
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;编译，测试。终于不再报错了。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Why HandleFunc Called Twice</title>
+      <link>http://hackez.github.io/why-handlefunc-called-twice/</link>
+      <pubDate>Sun, 24 Jul 2016 20:03:59 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/why-handlefunc-called-twice/</guid>
+      <description>
+
+&lt;h2 id=&#34;why-handlefunc-called-twice&#34;&gt;Why &lt;strong&gt;HandleFunc()&lt;/strong&gt; called twice?&lt;/h2&gt;
+
+&lt;h3 id=&#34;abstract&#34;&gt;Abstract&lt;/h3&gt;
+
+&lt;p&gt;今天遇到之前碰见过的一个问题，但是之前忘记研究了，正好今天终于把这个问题弄清楚了，于是记录下来。&lt;/p&gt;
+
+&lt;p&gt;想必很多做后台的小伙伴都写过服务器了，但是有没有遇到服务器在 &lt;strong&gt;通过不同的（Brower、API）方式访问&lt;/strong&gt; 的时候，服务器响应方法的 &lt;strong&gt;次数&lt;/strong&gt; 是不一样的情况呢？&lt;/p&gt;
+
+&lt;h3 id=&#34;problem&#34;&gt;Problem&lt;/h3&gt;
+
+&lt;p&gt;先来看看Golang中的简易服务器搭建代码：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func SayHello(rw http.ResponseWriter, req *http.Request) {
+    io.WriteString(rw, &amp;quot;hello~ You are in!&amp;quot;)
+    log.Println(&amp;quot;Oh, Here is a Guy coming in!&amp;quot;)
+}
+
+func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc(&amp;quot;/&amp;quot;, SayHello)
+    http.ListenAndServe(&amp;quot;:8080&amp;quot;, mux)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这是一个最简单的Golang服务器搭建，当http访问 &lt;code&gt;http://localhost:8080&lt;/code&gt; 的时候，该服务器会对客户端返回 &lt;code&gt;hello~ You are in!&lt;/code&gt; ，同时在服务器控制台中打印 &lt;code&gt;Oh, Here is a Guy coming in!&lt;/code&gt; 。&lt;/p&gt;
+
+&lt;p&gt;有意思的部分来了：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;通过 &lt;strong&gt;Brower&lt;/strong&gt; 访问的时候，服务器控制台会打印出 &lt;strong&gt;两行&lt;/strong&gt; &lt;code&gt;Oh, Here is a Guy coming in!&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;通过 &lt;code&gt;curl http://localhost:8080&lt;/code&gt; 命令进行访问的时候，服务器控制台只会打印 &lt;strong&gt;一行&lt;/strong&gt; &lt;code&gt;Oh, Here is a Guy coming in!&lt;/code&gt;。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&#34;why&#34;&gt;Why&lt;/h2&gt;
+
+&lt;p&gt;为什么会出现那么有趣的问题呢？&lt;a href=&#34;http://stackoverflow.com/questions/33432192/handlefunc-being-called-twice&#34;&gt;StackOver&lt;/a&gt;上也有人问了这个问题，原因出现在 Brower 上，通过打印 &lt;code&gt;requsets&lt;/code&gt;，你会发现 Brower 还会发起二次请求去请求 &lt;code&gt;/favicon.ico&lt;/code&gt;，也就是页面的小图标。&lt;/p&gt;
+
+&lt;p&gt;所以这就是用 &lt;code&gt;CURL&lt;/code&gt; 发起请求的时候，并不会出现二次请求的原因！&lt;/p&gt;
+
+&lt;h2 id=&#34;solve&#34;&gt;Solve&lt;/h2&gt;
+
+&lt;p&gt;既然知道了这个问题出现在哪，剩下就好办了，既然浏览器要请求图标，那么我们就在写一个路由专门处理这个请求即可：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc(&amp;quot;/&amp;quot;, SayHello)
+    // Handle /favicon.ico
+    mux.HandleFunc(&amp;quot;/favicon.ico&amp;quot;, func(rw http.ResponseWriter, req *http.Request) {})
+    http.ListenAndServe(&amp;quot;:9000&amp;quot;, mux)
+}
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Golang Dev Log</title>
+      <link>http://hackez.github.io/golang-dev-log/</link>
+      <pubDate>Sat, 23 Jul 2016 16:34:45 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/golang-dev-log/</guid>
+      <description>
+
+&lt;h2 id=&#34;golang-dev-log&#34;&gt;Golang Dev Log&lt;/h2&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;今天快要把 &lt;a href=&#34;https://www.github.com/HackeZ/getAcFunPage&#34;&gt;getAcFunPage&lt;/a&gt; 这个项目完结了，结果在重构项目的时候出现了两个哭笑不得的 &lt;strong&gt;BUG&lt;/strong&gt; 。总结下来，都是因为自身对 Golang 认识不够深入而出现的问题，所以现在这篇 Blog 是专门记录我在Golang开发中遇到的需要注意的点，以此警醒自己！&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;一个通用的结构体应该以一个包的方式存在并进行引用，否则会出现同一个结构体在不同的包中声明之后，在调用的时候，编译器会报 &lt;code&gt;cannot use xxx (type user) as type School.user&lt;/code&gt; 的错误。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// Example 1
+
+// file main.go
+type user struct {
+    name     string
+    age      int64
+}
+
+// file school.go
+type user struct {
+    name     string
+    age      int64
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ol&gt;
+&lt;li&gt;如果一个函数需要使用一个 &lt;strong&gt;相对路径&lt;/strong&gt; 调用一个 &lt;code&gt;静态文件&lt;/code&gt; ，那么需要将这个 &lt;code&gt;静态文件&lt;/code&gt; 的路径作为参数进行传入。&lt;br /&gt;
+因为 Golang 中对于 &lt;code&gt;静态文件&lt;/code&gt; 的调用不是根据函数所在位置的 &lt;strong&gt;相对路径&lt;/strong&gt; ，而是取决于调用这个函数的文件的位置所对应的相对路径。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// Example 2
+
+// ./markdown/markdown-style.go (Wrong)
+func GetStyle() {
+    f, err := os.OpenFile(&amp;quot;./markdown-style.css&amp;quot;,...)
+}
+
+// ./markdown/markdown-style.go (Corrent)
+func GetStyle(filepath string) {
+    f, err := os.OpenFile(filepath,...)
+}
+
+// ./main.go
+func main() {
+    // Wrong:  The system cannot find the file specified.
+    md.GetStyle()
+
+    // Corrent
+    md.Corrent(&amp;quot;./markdown/markdown-style.css&amp;quot;)
+}
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Redigo Action - 1</title>
+      <link>http://hackez.github.io/redigo-action-1/</link>
+      <pubDate>Fri, 22 Jul 2016 10:41:10 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/redigo-action-1/</guid>
+      <description>
+
+&lt;h1 id=&#34;redigo-action&#34;&gt;Redigo Action&lt;/h1&gt;
+
+&lt;h4 id=&#34;redis-作为一个内存型的高性能数据库-如今是越来越火了-为了得到更高的-qps-以及-tps-我们无法忽视掉这个如此强大的数据库&#34;&gt;Redis 作为一个内存型的高性能数据库，如今是越来越火了，为了得到更高的 QPS 以及 TPS ，我们无法忽视掉这个如此强大的数据库。&lt;/h4&gt;
+
+&lt;h4 id=&#34;在-redis-官网中-golang语言的-框架-http-redis-io-clients-go-有两个是被官方所推荐的-分别为&#34;&gt;在 Redis 官网中，Golang语言的&lt;a href=&#34;http:redis.io/clients#go&#34;&gt;框架&lt;/a&gt;有两个是被官方所推荐的，分别为：&lt;/h4&gt;
+
+&lt;p&gt;&lt;strong&gt;1. &lt;a href=&#34;https:github.com/garyburd/redigo&#34;&gt;Redigo&lt;/a&gt;&lt;/strong&gt;
+&lt;strong&gt;2. &lt;a href=&#34;https:github.com/mediocregopher/radix.v2&#34;&gt;Radix&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h4 id=&#34;本着源码易读优先-我选择了-redigo-进行开发尝试-项目地址-点我-https-www-github-com-hackez-getacfunpage&#34;&gt;本着源码易读优先，我选择了 Redigo 进行开发尝试，项目地址&lt;a href=&#34;https:www.github.com/HackeZ/getAcFunPage&#34;&gt;点我&lt;/a&gt;。&lt;/h4&gt;
+
+&lt;h3 id=&#34;action&#34;&gt;Action&lt;/h3&gt;
+
+&lt;p&gt;熟悉Redis的同学都知道，Redis是 &lt;strong&gt;单进程，单线程，IO多路复用&lt;/strong&gt; 的，这一点不同于 MySQL 的多线程。
+ 这就意味这Redis可以使用长连接来进行通信，那么，我们就需要一个连接池去管理这些长连接，当一个长连接使用完毕之后就可以交给下一个长连接继续进行使用。&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;连接池&lt;/strong&gt;
+基本思想是在系统初始化的时候，将数据库连接作为对象存储在内存中，当用户需要访问数据库时，并非建立一个新的连接，而是从连接池中取出一个已建立的空闲连接对象。使用完毕后，用户也并非将连接关闭，而是将连接放回连接池中，以供下一个请求访问使用。
+而连接的建立、断开都由连接池自身来管理。同时，还可以通过设置连接池的参数来控制连接池中的初始连接数、连接的上下限数以及每个连接的最大使用次数、最大空闲时间等等。
+也可以通过其自身的管理机制来监视数据库连接的数量、使用情况等。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;而 Redigo 就是支持连接池的，看看 &lt;a href=&#34;https:github.com/garyburd/redigo/blob/master/redis/pool.go#L43&#34;&gt;Redigo - Pool&lt;/a&gt;.
+其 L43 ～ L92 就给出了一个完整的 连接池 的正确打开方式。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func newPool(server, password string) *redis.Pool {
+      return &amp;amp;redis.Pool{
+          MaxIdle: 3,
+          IdleTimeout: 240 * time.Second,
+          Dial: func () (redis.Conn, error) {
+            c, err := redis.Dial(&amp;quot;tcp&amp;quot;, server)
+            if err != nil {
+                return nil, err
+            }
+            if _, err := c.Do(&amp;quot;AUTH&amp;quot;, password); err != nil {
+                c.Close()
+                return nil, err
+              }
+               return c, err
+          },
+          TestOnBorrow: func(c redis.Conn, t time.Time) error {
+              _, err := c.Do(&amp;quot;PING&amp;quot;)
+              return err
+          },
+      }
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这段简单易懂的代码返回了一个可用的 Redis 连接池，为了能够进行长连接处理，我们还需要定义一个全局的 &lt;strong&gt;redis.Pool&lt;/strong&gt; 变量进行使用。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;  var (
+      pool *redis.Pool
+      redisServer = flag.String(&amp;quot;redisServer&amp;quot;, &amp;quot;:6379&amp;quot;, &amp;quot;&amp;quot;)
+      redisPassword = flag.String(&amp;quot;redisPassword&amp;quot;, &amp;quot;&amp;quot;, &amp;quot;&amp;quot;)
+  )
+
+  func main() {
+      flag.Parse()
+      pool = newPool(*redisServer, *redisPassword)
+      ...
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当 &lt;strong&gt;request请求&lt;/strong&gt; 来到，我们就可以这样进行获取连接，并且一定记得在使用完毕之后将连接放回连接池。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;   func serveHome(w http.ResponseWriter, r *http.Request) {
+       conn := pool.Get()
+       defer conn.Close()
+       ....
+   }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;到了这里-一个可用并且高性能的-redis-数据库的连接已经基本构建完毕了&#34;&gt;到了这里，一个可用并且高性能的 Redis 数据库的连接已经基本构建完毕了！&lt;/h5&gt;
+
+&lt;h5 id=&#34;接下来就可以愉快地进行使用了&#34;&gt;接下来就可以愉快地进行使用了～&lt;/h5&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Cold Start</title>
+      <link>http://hackez.github.io/cold-start/</link>
+      <pubDate>Wed, 13 Jul 2016 19:39:47 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/cold-start/</guid>
+      <description>
+
+&lt;h1 id=&#34;about-two-different-cold-start&#34;&gt;About Two Different Cold Start&lt;/h1&gt;
+
+&lt;h2 id=&#34;app-cold-start&#34;&gt;APP Cold Start&lt;/h2&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&#34;what-s-app-cold-start&#34;&gt;&lt;strong&gt;What&amp;rsquo;s App Cold Start&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;对于最近安装的App a，我们不可能得到该对于该App用户的特殊使用信息。尤其是打开该App的概率 P(a)。另一方面，对于给定的 feature（特征）的先验概率（指根据以往经验和分析得到的概率），可以从其他用户的信息中获取。&lt;/p&gt;
+
+&lt;p&gt;因此，对于最近安装的App，怎么估计其打开概率P(a)是至关重要的。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&#34;yahoo-s-experimental-result&#34;&gt;&lt;strong&gt;Yahoo&amp;rsquo;s Experimental Result&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;通过记录最近安装的App打开记录（活跃度），图5（Daily）以及图6（Hourly）：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://7xsxev.com1.z0.glb.clouddn.com/Days-after-installation.png&#34; alt=&#34;Days After Installation&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;图 5  日常App安装后的活跃度&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://7xsxev.com1.z0.glb.clouddn.com/Days-after-installation.png&#34; alt=&#34;Hours After Installation&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;图 6  每小时App安装后的活跃度&lt;/p&gt;
+
+&lt;p&gt;从图 5 和 6 中可以看到，最近安装的App一个显着的特点是在安装后的数小时内非常活跃。但是经过这段时间之后，最近安装的App 的活跃度显着减少。与此相反，一些一开始活跃度并不高的 App 经常在它们安装后的很长一段时间依然在使用。&lt;/p&gt;
+
+&lt;h2 id=&#34;to-solve-app-cold-start&#34;&gt;&lt;strong&gt;To Solve App Cold Start&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;因此，为了更好地获取最近安装App打开频率，我们根据它们的活跃度持续时间长短，定义两种App类型，分别为：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Short-term （活跃度持续时间短，在刚开始的一段时间活跃度很高）&lt;/li&gt;
+&lt;li&gt;Long-term（活跃度持续时间长，在刚开始的一段时间活跃度不够高）&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;为捕抓每个App在时间上的突出显著性，我们将App使用数据转化为 &lt;strong&gt;Beta(α,β)&lt;/strong&gt; 值，为了区分时间显著性，我们使用尖峰（excess kurtosis）δ来评价每个App的时间使用峰度：
+&lt;img src=&#34;http://7xsxev.com1.z0.glb.clouddn.com/Excess-kurtosis-expression.png&#34; alt=&#34;Excess Kurtosis Expression&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;通过尖峰值可以判断最近安装App的类型：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;一个高尖峰值的App意味着它越有可能是Short-term类App（Game）&lt;/li&gt;
+&lt;li&gt;一个低尖峰值的App意味着它越有可能是Long-term类App（Communication）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;Short-term类的App可以通过获取特定的特点的用户来获取平均打开频率。&lt;/strong&gt;&lt;br /&gt;
+&lt;strong&gt;Long-term类的App则可以通过获取所有用户的平均值。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;随着用户打开App的事件增加，我们可以计算最近安装App的打开概率，因此，我们使用贝叶斯平均其他用户的历史信息来计算接下来的使用信息。计算最近安装App的打开概率公式如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://7xsxev.com1.z0.glb.clouddn.com/App-cold-start-expression.png&#34; alt=&#34;App Cold Start Expression&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;通过计算公式，仅仅通过少量的用户打开App事件得到同一App的其他用户近似的非加权值的启动概率。&lt;strong&gt;用户打开App事件越多，该公式的准确率越高。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&#34;user-cold-start&#34;&gt;User Cold Start&lt;/h2&gt;
+
+&lt;h2 id=&#34;what-s-user-cold-start&#34;&gt;&lt;strong&gt;What&amp;rsquo;s User Cold Start&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;在这一小节，我们提出两种方法解决User冷启动问题，什么是User冷启动呢？
+当一个用户安装了一个Launcher软件（Aviate，Buzz，Go 等桌面软件），我们在不知道这个用户的任何信息下如何向该用户推荐App清单呢？这个就是User冷启动问题。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&#34;two-ways-to-solve&#34;&gt;&lt;strong&gt;Two Ways to Solve&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;最相似用户策略：
+当这个new User在安装了Launcher之后，我们可以在已知的用户集中找到跟他最相似的用户，并将这个用户的使用指标赋值给他。&lt;br /&gt;
+那么怎么去计算跟他最相似的用户呢，我们可以使用 &lt;strong&gt;Jaccard系数&lt;/strong&gt; 进行计算，这个系数主要用来比较样本集中的相似性和分散性的一个概率。&lt;br /&gt;
+&lt;strong&gt;计算出用户之间的相似度，就可以将最相似用户的App清单进行推送。&lt;/strong&gt;&lt;br /&gt;
+事实上，最相似的用户的App清单与新用户的清单还是有很大的不一样的，在极端条件下，也就是不涉及到敏感的用户信息条件下，他们之间的App清单相似度甚至不会超过一个 &lt;strong&gt;纯粹随机策略&lt;/strong&gt; （相当于“猴子排序”）。&lt;br /&gt;
+虽然这个策略提高了User冷启动的平均准确度，但是也限制了可生成用户建议数的范围。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;伪用户策略：
+通过生成“伪历史”（假的用户使用记录）可以解决用户冷启动问题，而且该策略可以作为新用户训练PTAN模型的一种方法。&lt;br /&gt;
+这个想法在于找到少量的相似用户，其App清单能够覆盖新用户的App清单。这是一个简单的 &lt;strong&gt;NP-Hard证明问题&lt;/strong&gt; 。&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;P.S 1: NP-Hard问题也就是不能在限定的时间内计算出结果的问题，只能通过候选答案来验证这个答案是不是我们已知问题的一个答案&lt;/p&gt;
+
+&lt;p&gt;P.S 2关于这个问题为什么是一个NP-Hard问题，论文中没有给出解释，如果想了解怎么判断一个问题是不是NP-Hard问题，可以到 &lt;a href=&#34;http://blog.csdn.net/com_stu_zhang/article/details/7248277&#34;&gt;这里&lt;/a&gt; 查看解释，因为解释非常复杂，请允许我不复制粘贴上来&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;通过算法5，我们生成了伪用户数据：
+&lt;img src=&#34;http://7xsxev.com1.z0.glb.clouddn.com/Build-pseudo-user.png&#34; alt=&#34;Build Pseudo User&#34; /&gt;&lt;/p&gt;
 </description>
     </item>
     

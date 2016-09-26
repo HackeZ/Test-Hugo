@@ -2,13 +2,122 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://localhost:1313/</loc>
-    <lastmod>2016-03-29T14:38:19+08:00</lastmod>
-    <priority>0</priority>
+    <loc>http://hackez.github.io/</loc>
+    <lastmod>2016-09-25T23:27:46+08:00</lastmod>
   </url>
   
   <url>
-    <loc>http://localhost:1313/welcome/</loc>
+    <loc>http://hackez.github.io/circuitbreaker/</loc>
+    <lastmod>2016-09-25T23:27:46+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/tcpdump-in-action/</loc>
+    <lastmod>2016-09-16T10:07:54+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/protocol-buffers/</loc>
+    <lastmod>2016-09-09T09:44:00+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/how2use-captcha-in-beego/</loc>
+    <lastmod>2016-09-01T18:45:49+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/fun-in-docker-2/</loc>
+    <lastmod>2016-08-31T19:17:28+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/fun-in-docker-1/</loc>
+    <lastmod>2016-08-20T16:17:42+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/global_gitignore/</loc>
+    <lastmod>2016-08-18T16:03:05+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/how-2-install-scikit-learn/</loc>
+    <lastmod>2016-08-15T22:49:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/golang-package-dependency-management-tool/</loc>
+    <lastmod>2016-08-07T11:11:25+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/C-Prefess-Program/</loc>
+    <lastmod>2016-07-30T22:47:07+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/redigo-open2manyfiles/</loc>
+    <lastmod>2016-07-27T13:29:11+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/why-handlefunc-called-twice/</loc>
+    <lastmod>2016-07-24T20:03:59+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/golang-dev-log/</loc>
+    <lastmod>2016-07-23T16:34:45+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/redigo-action-1/</loc>
+    <lastmod>2016-07-22T10:41:10+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/cold-start/</loc>
+    <lastmod>2016-07-13T19:39:47+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/hadoop-1/</loc>
+    <lastmod>2016-06-13T20:45:25+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/lenproblem/</loc>
+    <lastmod>2016-06-02T11:08:54+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/channel/</loc>
+    <lastmod>2016-05-11T19:41:18+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/socket/</loc>
+    <lastmod>2016-05-03T21:35:08+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/about-me/</loc>
+    <lastmod>2016-04-30T19:14:56+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/qn-sdkv7-pb/</loc>
+    <lastmod>2016-04-15T16:46:54+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/build/</loc>
+    <lastmod>2016-04-13T16:55:34+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://hackez.github.io/welcome/</loc>
     <lastmod>2016-03-29T14:38:19+08:00</lastmod>
   </url>
   

@@ -1,0 +1,152 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> tcpdump in Action &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>tcpdump in Action</h1>
+			  <span class="post-date">Fri, Sep 16, 2016</span>
+			      
+
+<h2 id="intro">Intro</h2>
+
+<p>昨天上线了新完成的网站 <a href="http://123.207.0.81:8563">Personal-Dictionary</a> <a href="https://www.github.com/HackeZ/Personal-Dictionary">源码在此</a></p>
+
+<p>但是上线期间却发生网站从 <a href="http://127.0.0.1:8563">http://127.0.0.1:8563</a> 可以访问，但是外网访问却显示 <code>“无法访问此网络”</code> 的情况，最后通过分析抓包工具 <code>tcpdump</code> 的结果解决了该问题。</p>
+
+<h2 id="problem">Problem</h2>
+
+<p>这是一个 <code>Beego</code> 应用，按理来说只要编译出二进制文件，然后将静态文件和二进制文件发送到服务器端，然后运行该二进制文件即可。</p>
+
+<p>编译 Linux OS 下可执行文件的命令为</p>
+
+<p><code>$ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o PD main.go</code></p>
+
+<p>编译完成之后， 通过 <code>$ scp PD root@123.207.0.81:/home/...</code> 将文件上传至服务器。</p>
+
+<p>使用 <code>$ nohup ./PD &amp;</code> 即可将该应用以后台服务的形式运行在服务器中。</p>
+
+<p>但是问题出现了，通过外网的 IP 地址访问该 应用的端口地址却提示 <code>“无法访问此网络”</code> 的情况， 然后我使用 <code>$ curl http://127.0.0.1:8563</code> 却能直接返回网页内容！</p>
+
+<h2 id="slove">Slove</h2>
+
+<p>为了解决这个问题，我最先想到的就是该端口是否被外网的中间件屏蔽了呢。有一个最直观的方法可以观察检查该情况，就是使用 <code>tcpdump</code> 抓包工具！</p>
+
+<p>在服务器端启动应用之后，使用 <code>$ tcpdump 网卡[eth0, lo] tcp port 8563 host 123.207.0.81</code></p>
+
+<p>去截获访问该应用的端口 TCP 包，然后通过浏览器访问 <a href="http://123.207.0.81:8563">http://123.207.0.81:8563</a> 测试 TCP 包是否能正确到达 服务器的该端口。</p>
+
+<p>结果 tcpdump 截获到的结果可以简化为</p>
+
+<pre><code>.... [S]
+.... [R.]
+.... [S]
+.... [R.]
+.... [S]
+.... [R.]
+</code></pre>
+
+<p>很明显了：
+    - <code>S</code> 代表着 <code>SEND</code>
+    - <code>R</code> 代表着 <code>RST</code></p>
+
+<p>浏览器试图访问该端口，然后服务器直接就 RST 掉该请求，这样的情况下很可能就是该端口没有被打开！</p>
+
+<p>关于更多的 RST 情况我推荐一篇 Blog —— <a href="https://my.oschina.net/costaxu/blog/127394">costaxu</a></p>
+
+<p>根据上面的情况，我很快就能定位到问题所在：</p>
+
+<pre><code class="language-go">// main.go
+func main() {
+    beego.Run(&quot;127.0.0.1&quot;+beego.AppConfig.String(&quot;httpport&quot;)) // 这里只指定了内网的服务地址...
+}
+</code></pre>
+
+<p>最后，只需要将 <code>beego.Run()</code> 替换掉上面的即可解决。</p>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

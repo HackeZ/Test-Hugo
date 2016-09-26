@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Docker on HackerZ - Blog</title>
+    <link>http://hackez.github.io/categories/docker/</link>
+    <description>Recent content in Docker on HackerZ - Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 31 Aug 2016 19:17:28 +0800</lastBuildDate>
+    <atom:link href="http://hackez.github.io/categories/docker/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Fun in Docker Day-2</title>
+      <link>http://hackez.github.io/fun-in-docker-2/</link>
+      <pubDate>Wed, 31 Aug 2016 19:17:28 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/fun-in-docker-2/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;今天来详细讲一下之前没有讲清楚的 Docker 镜像打包方法。&lt;/p&gt;
+
+&lt;h2 id=&#34;page-command&#34;&gt;Page Command&lt;/h2&gt;
+
+&lt;p&gt;我们都知道，打包 Docker 应用有两种方式：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;在已经存在的 images 中 commit 修改。&lt;/li&gt;
+&lt;li&gt;创建一个全新的 images 。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;这两种方法各有优缺点。下面都来说一下怎么进行操作。&lt;/p&gt;
+
+&lt;h2 id=&#34;way-one&#34;&gt;Way One&lt;/h2&gt;
+
+&lt;p&gt;在已有的 images 中修改并 commit&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;优点：
+
+&lt;ul&gt;
+&lt;li&gt;这是最方便快捷的方法&lt;/li&gt;
+&lt;li&gt;可以避免自己打包而导致出现的一些问题，如静态文件引用错误等&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;缺点：
+
+&lt;ul&gt;
+&lt;li&gt;可定制程度低&lt;/li&gt;
+&lt;li&gt;打包出来的镜像文件可能会很大，不利于存储&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;在 Docker 官网的文档中已经很详细操作过了，下面的是我翻译的版本。具体的官方英文&lt;a href=&#34;https://docs.docker.com/engine/tutorials/dockerimages/#/updating-and-committing-an-image&#34;&gt;点我&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;首先你需要一个 images 才能进行更新操作呀，所以首先：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;#   获取 images
+$ docker pull training/sinatra
+#   运行 images 并进入到命令行中
+$ docker run -t -i training/sinatra /bin/bash
+root@0b2616b0e5a8:/#
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;记住这个被创建容器的 ID， &lt;code&gt;0b2616b0e5a8&lt;/code&gt; ，一会你会用得上的。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;接上面的操作&amp;hellip;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;#   首先更新一下 Ruby
+root@0b2616b0e5a8:/# apt-get install -y ruby2.0-dev
+#   然后安装  gem  json
+root@0b2616b0e5a8:/# gem2.0 install json
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;完成了这些更改之后，你可以运行 &lt;code&gt;exit&lt;/code&gt; 命令退出。&lt;/p&gt;
+
+&lt;p&gt;现在你可以像使用 &lt;code&gt;git&lt;/code&gt; 一样更新这个镜像了：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;#   &#39;-m&#39; &#39;-a&#39; 这些看起来很熟悉啦，和 git 中是一样的，就不再说了...
+$ docker commit -m &amp;quot;Added json gem&amp;quot; -a &amp;quot;Kate Smith&amp;quot; \
+0b2616b0e5a8 ouruser/sinatra:v2
+
+4f177bd27a9ff0f6dc2a830403925b5360bfe0b93d476f7fc3231110e7f71b1c
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后运行一下 &lt;code&gt;docker images&lt;/code&gt; 来看看新创建的容器吧&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ docker images
+
+REPOSITORY          TAG     IMAGE ID       CREATED       SIZE
+training/sinatra    latest  5bc342fa0b91   10 hours ago  446.7 MB
+ouruser/sinatra     v2      3c59e02ddd1a   10 hours ago  446.7 MB
+ouruser/sinatra     latest  5db5f8471261   10 hours ago  446.7 MB
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;way-two&#34;&gt;Way Two&lt;/h2&gt;
+
+&lt;p&gt;完全创建一个新的 images 是很多人第一时间就想做的，但是官网简介中并没有太多详细标注的细节，那么我就以我的第一视角讲诉一下我是怎么创建一个全新的  images 的。&lt;/p&gt;
+
+&lt;p&gt;依然是 Go ，首先创建一个简单的读取文件内容的项目：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ cd $GOPATH/src
+$ mkdir File_Reader
+$ vim File_Reader/main.go
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;源代码如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
+
+import (
+	&amp;quot;bufio&amp;quot;
+	&amp;quot;fmt&amp;quot;
+	&amp;quot;io&amp;quot;
+	&amp;quot;log&amp;quot;
+	&amp;quot;os&amp;quot;
+)
+
+func main() {
+	file, err := os.OpenFile(&amp;quot;./file.txt&amp;quot;, os.O_RDONLY, os.ModePerm)
+	defer file.Close()
+
+	if err != nil {
+		log.Println(&amp;quot;file.txt open false!&amp;quot;)
+	}
+
+	fileReader := bufio.NewReader(file)
+
+	for {
+		line, err := fileReader.ReadString(&#39;\n&#39;)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Println(&amp;quot;Read File Content Failed!&amp;quot;, err.Error())
+			return
+		}
+		fmt.Println(line)
+	}
+
+	fmt.Println(&amp;quot;File Read Done!&amp;quot;)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;接下来就是在当前目录下创建一个 &lt;code&gt;file.txt&lt;/code&gt; ，然后输入你想要的内容进去。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ &amp;quot;xxxxxx&amp;quot; &amp;gt;&amp;gt; file.txt
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;接下来就需要先将源代码文件编译成二进制文件，因为如果我们希望这个 images 越小，越少的编译环境可以达到更好的效果。
+命令如之前一样：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后你可以看到当前目录下出现了一个 &lt;code&gt;main&lt;/code&gt; 的可执行文件。&lt;/p&gt;
+
+&lt;p&gt;重要的步骤来了，当前目录下创建一个 &lt;code&gt;Dockerfile&lt;/code&gt; 文件，输入如下内容：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FROM scratch
+MAINTAINER HackerZ
+ADD main /
+ADD file.txt /
+CMD [&amp;quot;/main&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;我来解释一下这些都是什么意思：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;FROM : Docker 用来指定该镜像是基于哪个基础镜像构建的&lt;/li&gt;
+&lt;li&gt;MAINTAINER : 镜像创建人的名字&lt;/li&gt;
+&lt;li&gt;ADD  : 从 Dockerfile 所在目录拷贝文件到指定路径下&lt;/li&gt;
+&lt;li&gt;CMD  : 用来指示当运行 &lt;code&gt;docker run&lt;/code&gt; 命令运行该镜像时要执行的命令&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;其余的还有：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;EXPOSE : 开放的网络端口号&lt;/li&gt;
+&lt;li&gt;ENV    : 设置环境变量&lt;/li&gt;
+&lt;li&gt;VOLUME : 可以将本地文件夹或者其他容器的文件夹挂载到该容器中。&lt;/li&gt;
+&lt;li&gt;WORKDIR: 切换目录用，可以多次切换(相当于cd命令)，对RUN,CMD,ENTRYPOINT生效&lt;/li&gt;
+&lt;li&gt;ONBUILD: ONBUILD 指定的命令在构建镜像时并不执行，而是在它的子镜像中执行&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;好了，运行 &lt;code&gt;docker build -t fileReader .&lt;/code&gt; 创建全新的 images 吧。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Fun in Docker Day-1</title>
+      <link>http://hackez.github.io/fun-in-docker-1/</link>
+      <pubDate>Sat, 20 Aug 2016 16:17:42 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/fun-in-docker-1/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;今天心血来潮，想在 OSX 中重新体验一下 &lt;code&gt;Docker&lt;/code&gt;，结果因为 &lt;code&gt;Docker&lt;/code&gt; 是基于 &lt;code&gt;Linux&lt;/code&gt;，在 OSX 中实在是 Fun 不起来，于是便纪录下来这天的过程。&lt;/p&gt;
+
+&lt;h2 id=&#34;install&#34;&gt;Install&lt;/h2&gt;
+
+&lt;p&gt;这部分没什么好说的， &lt;code&gt;Docker&lt;/code&gt; 官方已经出了 &lt;a href=&#34;https://docs.docker.com/docker-for-mac/&#34;&gt;OSX&lt;/a&gt; 的安装包，直接下载拖进 &lt;code&gt;Application/&lt;/code&gt; 即可完成安装。&lt;/p&gt;
+
+&lt;p&gt;安装完成之后，可以直接在命令行中运行：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ docker --version  # Docker 主体
+$ docker-compose --version  # 定义和管理复杂 Docker 应用的工具
+$ docker-machine --version  # 简化 Docker 安装的工具
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;查看所有的安装工具是否能够正确启动。&lt;/p&gt;
+
+&lt;p&gt;之后，便可以尝试运行 &lt;code&gt;Hello World&lt;/code&gt; 和 &lt;code&gt;nginx&lt;/code&gt; 玩一下了。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# Hello World
+$ docker run hello-world
+
+# nginx
+$ docker run -d -p 80:80 --name webserver nginx
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;package&#34;&gt;Package&lt;/h2&gt;
+
+&lt;p&gt;以我的开源项目 &lt;a href=&#34;https://www.github.com/HackeZ/getMeizi&#34;&gt;getMeizi&lt;/a&gt; 为例子尝试打包 &lt;code&gt;Golang应用&lt;/code&gt; 。&lt;/p&gt;
+
+&lt;h4 id=&#34;first-try&#34;&gt;First Try&lt;/h4&gt;
+
+&lt;p&gt;首先我在项目的根目录下编写了一个 &lt;code&gt;Dockerfile&lt;/code&gt; 文件，其内容为：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FROM golang:onbuild
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后通过 &lt;code&gt;$ docker build -t getmeizi .&lt;/code&gt; 来构建一个镜像。&lt;/p&gt;
+
+&lt;p&gt;但是这样构建的镜像会将 &lt;code&gt;Golang&lt;/code&gt; 的整个环境都打包进去，生成的镜像大小为 &lt;code&gt;832.5 MB&lt;/code&gt; 。&lt;/p&gt;
+
+&lt;p&gt;很显然我们会更加愿意得到一个更灵活小巧的镜像，于是，我的目光转向了 &lt;code&gt;scratch&lt;/code&gt; 。&lt;/p&gt;
+
+&lt;h4 id=&#34;second-try&#34;&gt;Second Try&lt;/h4&gt;
+
+&lt;p&gt;修改 &lt;code&gt;Dockerfile&lt;/code&gt; 文件内容为：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FROM scratch
+ADD main /
+CMD [&amp;quot;/main&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然后先将 &lt;code&gt;getMeizi&lt;/code&gt; 应用编译完：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;最后使用 &lt;code&gt;$ docker build -t getmeizi .&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;构建即可生成一个仅有 &lt;code&gt;5.83 MB&lt;/code&gt; 大小的镜像。&lt;/p&gt;
+
+&lt;h2 id=&#34;push&#34;&gt;Push&lt;/h2&gt;
+
+&lt;p&gt;最后将打包好的镜像发布到 &lt;strong&gt;Docker.io&lt;/strong&gt; 中：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ docker images
+# REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+# getmeizi            latest              7ddcbed63a17        2 minutes ago         5.839 MB
+
+$ docker tag 7ddcbed63a17 hackerz/getmeizi
+
+$ docker images
+# REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+# getmeizi            latest              7ddcbed63a17        3 minutes ago         5.839 MB
+# hackerz/getmeizi    latest              7ddcbed63a17        3 minutes ago         5.839 MB
+
+$ docker login
+# ***
+# Login Succeeded
+
+$ docker push hackerz/getmeizi
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;打开 &lt;a href=&#34;https://hub.docker.com/r/hackerz/getmeizi/&#34;&gt;hackerz/getmeizi&lt;/a&gt; 查看并编辑镜像描述。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

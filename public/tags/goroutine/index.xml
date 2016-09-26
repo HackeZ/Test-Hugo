@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Goroutine on HackerZ - Blog</title>
+    <link>http://hackez.github.io/tags/goroutine/</link>
+    <description>Recent content in Goroutine on HackerZ - Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 11 May 2016 19:41:18 +0800</lastBuildDate>
+    <atom:link href="http://hackez.github.io/tags/goroutine/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>The Channel in Golang</title>
+      <link>http://hackez.github.io/channel/</link>
+      <pubDate>Wed, 11 May 2016 19:41:18 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/channel/</guid>
+      <description>
+
+&lt;p&gt;Golang中的Channel分析&lt;/p&gt;
+
+&lt;p&gt;作为Golang语言的核心，并发编程是学习Golang的必经之路。对于不同进程之间的通信手段总会涉及到跨进程通信，那么这个通信手段必须是一个可共享内存的方法，而Golang提倡的理念为：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;“应该以通信作为手段来共享内存”&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;而这一句话的直接体现在于Golang所提供的一个预定义数据类型 —— &lt;strong&gt;Channel&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Channel提供了一种机制。它既可以 &lt;strong&gt;同步&lt;/strong&gt; 两个被并发执行的函数，又可以让这两个函数通过传递特定类型的值来进行 &lt;strong&gt;通信&lt;/strong&gt;。使用Channel可以让我们编写更清晰且正确的代码。&lt;/p&gt;
+
+&lt;p&gt;关于使用Channel需要记住的知识点：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;在同一时刻，仅有一个Goroutine能向同一个Channel发送元素值，同时也只有一个Goroutine能从它哪里接收元素值。&lt;/li&gt;
+&lt;li&gt;Channel是一个FIFO的消息队列。&lt;/li&gt;
+&lt;li&gt;Channel中的元素值已经确保具有原子性。&lt;/li&gt;
+&lt;li&gt;Channel可以分为缓冲与非缓冲，它们之间的差别非常大。&lt;/li&gt;
+&lt;li&gt;Channel可分为双向与单向，一般通道都会声明为双向，只有在限制函数体中使用通道的方式（只允许发送或接收）才会使用单向Channel。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;talk-is-cheap-show-me-the-code&#34;&gt;Talk is Cheap,Show me the Code!&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;初始化通道&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;因为Channel属于引用类型之一，所以必须使用make关键字初始化它。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// 缓冲通道（容纳int类型元素，有长度，可暂存元素）
+intChan := make(chan int, 5)
+
+// 非缓冲通道（容纳byte类型元素，无长度，不可暂存元素）
+byteChan := make(chan byte)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;发送元素值&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// 向intChan通道发送一个元素值为5的元素
+intChan &amp;lt;- 5
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;注意：向一个值为nil的Channel进行发送操作会造成当前Goroutine &lt;strong&gt;永久阻塞！&lt;/strong&gt;。&lt;br /&gt;
+而向一个已经塞满元素的Channel进行发送操作则会将当前的Goroutine &lt;strong&gt;阻塞&lt;/strong&gt;，直至Channel中的元素被接收，所以一般会在 &lt;strong&gt;select&lt;/strong&gt; 代码块中进行发送操作。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;接收元素值&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// 在intChan通道中接收一个元素值
+elem := &amp;lt;-intChan
+
+// 接收元素值，并判断该通道是否已经关闭
+elem, ok := &amp;lt;-intChan
+if !ok {
+    fmt.Println(&amp;quot;Channel is Closed!&amp;quot;)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;同样需要注意的是，如果向一个值为nil的Channel进行接收操作，同样会造成 &lt;strong&gt;永久阻塞！&lt;/strong&gt;&lt;br /&gt;
+而向一个没有元素值的Channel进行接收操作，也会将当前的Goroutine &lt;strong&gt;阻塞&lt;/strong&gt;，直至Channel中有了新的元素。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;关闭Channel&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;关闭Channel并不是如其字面意思，完全将Channel关闭。而其正确的作用是告诉系统，不应该再允许任何针对被关闭的通道的发送操作，该通道已经被关闭，但是已经缓存在Channel中的元素不会受到影响，这也是Channel非常优秀的特性之一。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// 调用内建函数close()关闭Channel
+close(intChan)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;注意，无论任何时候，我们都 &lt;strong&gt;不应该&lt;/strong&gt; 在接收端关闭Channel，因为我们永远都不知道发送端是否已经将元素发送完毕。&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;最后，可以到&lt;a href=&#34;https://www.github.com/HackeZ&#34;&gt;这里&lt;/a&gt;学习更多的Channel相关代码！&lt;/p&gt;
+&lt;/blockquote&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

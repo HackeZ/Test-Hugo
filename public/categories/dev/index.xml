@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Dev on HackerZ - Blog</title>
+    <link>http://hackez.github.io/categories/dev/</link>
+    <description>Recent content in Dev on HackerZ - Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Jul 2016 16:34:45 +0800</lastBuildDate>
+    <atom:link href="http://hackez.github.io/categories/dev/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Golang Dev Log</title>
+      <link>http://hackez.github.io/golang-dev-log/</link>
+      <pubDate>Sat, 23 Jul 2016 16:34:45 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/golang-dev-log/</guid>
+      <description>
+
+&lt;h2 id=&#34;golang-dev-log&#34;&gt;Golang Dev Log&lt;/h2&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;今天快要把 &lt;a href=&#34;https://www.github.com/HackeZ/getAcFunPage&#34;&gt;getAcFunPage&lt;/a&gt; 这个项目完结了，结果在重构项目的时候出现了两个哭笑不得的 &lt;strong&gt;BUG&lt;/strong&gt; 。总结下来，都是因为自身对 Golang 认识不够深入而出现的问题，所以现在这篇 Blog 是专门记录我在Golang开发中遇到的需要注意的点，以此警醒自己！&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;一个通用的结构体应该以一个包的方式存在并进行引用，否则会出现同一个结构体在不同的包中声明之后，在调用的时候，编译器会报 &lt;code&gt;cannot use xxx (type user) as type School.user&lt;/code&gt; 的错误。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// Example 1
+
+// file main.go
+type user struct {
+    name     string
+    age      int64
+}
+
+// file school.go
+type user struct {
+    name     string
+    age      int64
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ol&gt;
+&lt;li&gt;如果一个函数需要使用一个 &lt;strong&gt;相对路径&lt;/strong&gt; 调用一个 &lt;code&gt;静态文件&lt;/code&gt; ，那么需要将这个 &lt;code&gt;静态文件&lt;/code&gt; 的路径作为参数进行传入。&lt;br /&gt;
+因为 Golang 中对于 &lt;code&gt;静态文件&lt;/code&gt; 的调用不是根据函数所在位置的 &lt;strong&gt;相对路径&lt;/strong&gt; ，而是取决于调用这个函数的文件的位置所对应的相对路径。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// Example 2
+
+// ./markdown/markdown-style.go (Wrong)
+func GetStyle() {
+    f, err := os.OpenFile(&amp;quot;./markdown-style.css&amp;quot;,...)
+}
+
+// ./markdown/markdown-style.go (Corrent)
+func GetStyle(filepath string) {
+    f, err := os.OpenFile(filepath,...)
+}
+
+// ./main.go
+func main() {
+    // Wrong:  The system cannot find the file specified.
+    md.GetStyle()
+
+    // Corrent
+    md.Corrent(&amp;quot;./markdown/markdown-style.css&amp;quot;)
+}
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,140 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> Global Ignore File in Git &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>Global Ignore File in Git</h1>
+			  <span class="post-date">Thu, Aug 18, 2016</span>
+			      
+
+<h2 id="intro">Intro</h2>
+
+<p>自从换了 OSX 进行开发，就发现每当修改了项目文件， OSX 在项目目录都会生成一个 <code>.DS_Store</code> 的隐藏文件，该文件用于记录当前目录下文件的 Meta 信息。</p>
+
+<p>对于这样的情况，我不可能在每个项目的根目录都配置一个 <code>.gitignore</code> 文件，这样可复用性太地了，于是我便想能不能配置一个 Git 的 <code>.gitignore_global</code> 文件，统一忽略掉所有我不需要上传的文件呢。</p>
+
+<h2 id="solve">Solve</h2>
+
+<p>Git 还真有这样的方法，它提供了一个 <strong>忽略规则</strong> ，我们可以通过编写一个忽略规则文件，然后通过如下的命令配置进 Git :</p>
+
+<pre><code class="language-shell">$ git config --global core.excludesfile '忽略文件完整路径'
+</code></pre>
+
+<p>即可。</p>
+
+<h2 id="global-gitignore">Global GitIgnore</h2>
+
+<p>新建一个 <code>.gitignore_global</code> 文件，并往里面编写忽略文件语法，该语法符合正则表达式， <code>#</code> 号为注释，每一行为一个忽略规则：</p>
+
+<pre><code class="language-shell"># OSX
+.DS_Store
+.DS_Store*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python
+*.pyc
+
+# C
+*.[ao]
+
+# Package
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+</code></pre>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

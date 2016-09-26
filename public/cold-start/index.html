@@ -1,0 +1,187 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> Cold Start &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>Cold Start</h1>
+			  <span class="post-date">Wed, Jul 13, 2016</span>
+			      
+
+<h1 id="about-two-different-cold-start">About Two Different Cold Start</h1>
+
+<h2 id="app-cold-start">APP Cold Start</h2>
+
+<hr />
+
+<h2 id="what-s-app-cold-start"><strong>What&rsquo;s App Cold Start</strong></h2>
+
+<blockquote>
+<p>对于最近安装的App a，我们不可能得到该对于该App用户的特殊使用信息。尤其是打开该App的概率 P(a)。另一方面，对于给定的 feature（特征）的先验概率（指根据以往经验和分析得到的概率），可以从其他用户的信息中获取。</p>
+
+<p>因此，对于最近安装的App，怎么估计其打开概率P(a)是至关重要的。</p>
+</blockquote>
+
+<h2 id="yahoo-s-experimental-result"><strong>Yahoo&rsquo;s Experimental Result</strong></h2>
+
+<p>通过记录最近安装的App打开记录（活跃度），图5（Daily）以及图6（Hourly）：</p>
+
+<p><img src="http://7xsxev.com1.z0.glb.clouddn.com/Days-after-installation.png" alt="Days After Installation" /></p>
+
+<p>图 5  日常App安装后的活跃度</p>
+
+<p><img src="http://7xsxev.com1.z0.glb.clouddn.com/Days-after-installation.png" alt="Hours After Installation" /></p>
+
+<p>图 6  每小时App安装后的活跃度</p>
+
+<p>从图 5 和 6 中可以看到，最近安装的App一个显着的特点是在安装后的数小时内非常活跃。但是经过这段时间之后，最近安装的App 的活跃度显着减少。与此相反，一些一开始活跃度并不高的 App 经常在它们安装后的很长一段时间依然在使用。</p>
+
+<h2 id="to-solve-app-cold-start"><strong>To Solve App Cold Start</strong></h2>
+
+<p>因此，为了更好地获取最近安装App打开频率，我们根据它们的活跃度持续时间长短，定义两种App类型，分别为：</p>
+
+<ol>
+<li>Short-term （活跃度持续时间短，在刚开始的一段时间活跃度很高）</li>
+<li>Long-term（活跃度持续时间长，在刚开始的一段时间活跃度不够高）</li>
+</ol>
+
+<p>为捕抓每个App在时间上的突出显著性，我们将App使用数据转化为 <strong>Beta(α,β)</strong> 值，为了区分时间显著性，我们使用尖峰（excess kurtosis）δ来评价每个App的时间使用峰度：
+<img src="http://7xsxev.com1.z0.glb.clouddn.com/Excess-kurtosis-expression.png" alt="Excess Kurtosis Expression" /></p>
+
+<p>通过尖峰值可以判断最近安装App的类型：</p>
+
+<ul>
+<li>一个高尖峰值的App意味着它越有可能是Short-term类App（Game）</li>
+<li>一个低尖峰值的App意味着它越有可能是Long-term类App（Communication）</li>
+</ul>
+
+<p><strong>Short-term类的App可以通过获取特定的特点的用户来获取平均打开频率。</strong><br />
+<strong>Long-term类的App则可以通过获取所有用户的平均值。</strong></p>
+
+<p>随着用户打开App的事件增加，我们可以计算最近安装App的打开概率，因此，我们使用贝叶斯平均其他用户的历史信息来计算接下来的使用信息。计算最近安装App的打开概率公式如下：</p>
+
+<p><img src="http://7xsxev.com1.z0.glb.clouddn.com/App-cold-start-expression.png" alt="App Cold Start Expression" /></p>
+
+<p>通过计算公式，仅仅通过少量的用户打开App事件得到同一App的其他用户近似的非加权值的启动概率。<strong>用户打开App事件越多，该公式的准确率越高。</strong></p>
+
+<hr />
+
+<h2 id="user-cold-start">User Cold Start</h2>
+
+<h2 id="what-s-user-cold-start"><strong>What&rsquo;s User Cold Start</strong></h2>
+
+<blockquote>
+<p>在这一小节，我们提出两种方法解决User冷启动问题，什么是User冷启动呢？
+当一个用户安装了一个Launcher软件（Aviate，Buzz，Go 等桌面软件），我们在不知道这个用户的任何信息下如何向该用户推荐App清单呢？这个就是User冷启动问题。</p>
+</blockquote>
+
+<h2 id="two-ways-to-solve"><strong>Two Ways to Solve</strong></h2>
+
+<ol>
+<li><p>最相似用户策略：
+当这个new User在安装了Launcher之后，我们可以在已知的用户集中找到跟他最相似的用户，并将这个用户的使用指标赋值给他。<br />
+那么怎么去计算跟他最相似的用户呢，我们可以使用 <strong>Jaccard系数</strong> 进行计算，这个系数主要用来比较样本集中的相似性和分散性的一个概率。<br />
+<strong>计算出用户之间的相似度，就可以将最相似用户的App清单进行推送。</strong><br />
+事实上，最相似的用户的App清单与新用户的清单还是有很大的不一样的，在极端条件下，也就是不涉及到敏感的用户信息条件下，他们之间的App清单相似度甚至不会超过一个 <strong>纯粹随机策略</strong> （相当于“猴子排序”）。<br />
+虽然这个策略提高了User冷启动的平均准确度，但是也限制了可生成用户建议数的范围。</p></li>
+
+<li><p>伪用户策略：
+通过生成“伪历史”（假的用户使用记录）可以解决用户冷启动问题，而且该策略可以作为新用户训练PTAN模型的一种方法。<br />
+这个想法在于找到少量的相似用户，其App清单能够覆盖新用户的App清单。这是一个简单的 <strong>NP-Hard证明问题</strong> 。</p></li>
+</ol>
+
+<blockquote>
+<p>P.S 1: NP-Hard问题也就是不能在限定的时间内计算出结果的问题，只能通过候选答案来验证这个答案是不是我们已知问题的一个答案</p>
+
+<p>P.S 2关于这个问题为什么是一个NP-Hard问题，论文中没有给出解释，如果想了解怎么判断一个问题是不是NP-Hard问题，可以到 <a href="http://blog.csdn.net/com_stu_zhang/article/details/7248277">这里</a> 查看解释，因为解释非常复杂，请允许我不复制粘贴上来</p>
+</blockquote>
+
+<p>通过算法5，我们生成了伪用户数据：
+<img src="http://7xsxev.com1.z0.glb.clouddn.com/Build-pseudo-user.png" alt="Build Pseudo User" /></p>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

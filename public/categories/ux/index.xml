@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Ux on HackerZ - Blog</title>
+    <link>http://hackez.github.io/categories/ux/</link>
+    <description>Recent content in Ux on HackerZ - Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 13 Jul 2016 19:39:47 +0800</lastBuildDate>
+    <atom:link href="http://hackez.github.io/categories/ux/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Cold Start</title>
+      <link>http://hackez.github.io/cold-start/</link>
+      <pubDate>Wed, 13 Jul 2016 19:39:47 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/cold-start/</guid>
+      <description>
+
+&lt;h1 id=&#34;about-two-different-cold-start&#34;&gt;About Two Different Cold Start&lt;/h1&gt;
+
+&lt;h2 id=&#34;app-cold-start&#34;&gt;APP Cold Start&lt;/h2&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&#34;what-s-app-cold-start&#34;&gt;&lt;strong&gt;What&amp;rsquo;s App Cold Start&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;对于最近安装的App a，我们不可能得到该对于该App用户的特殊使用信息。尤其是打开该App的概率 P(a)。另一方面，对于给定的 feature（特征）的先验概率（指根据以往经验和分析得到的概率），可以从其他用户的信息中获取。&lt;/p&gt;
+
+&lt;p&gt;因此，对于最近安装的App，怎么估计其打开概率P(a)是至关重要的。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&#34;yahoo-s-experimental-result&#34;&gt;&lt;strong&gt;Yahoo&amp;rsquo;s Experimental Result&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;通过记录最近安装的App打开记录（活跃度），图5（Daily）以及图6（Hourly）：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://7xsxev.com1.z0.glb.clouddn.com/Days-after-installation.png&#34; alt=&#34;Days After Installation&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;图 5  日常App安装后的活跃度&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://7xsxev.com1.z0.glb.clouddn.com/Days-after-installation.png&#34; alt=&#34;Hours After Installation&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;图 6  每小时App安装后的活跃度&lt;/p&gt;
+
+&lt;p&gt;从图 5 和 6 中可以看到，最近安装的App一个显着的特点是在安装后的数小时内非常活跃。但是经过这段时间之后，最近安装的App 的活跃度显着减少。与此相反，一些一开始活跃度并不高的 App 经常在它们安装后的很长一段时间依然在使用。&lt;/p&gt;
+
+&lt;h2 id=&#34;to-solve-app-cold-start&#34;&gt;&lt;strong&gt;To Solve App Cold Start&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;因此，为了更好地获取最近安装App打开频率，我们根据它们的活跃度持续时间长短，定义两种App类型，分别为：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Short-term （活跃度持续时间短，在刚开始的一段时间活跃度很高）&lt;/li&gt;
+&lt;li&gt;Long-term（活跃度持续时间长，在刚开始的一段时间活跃度不够高）&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;为捕抓每个App在时间上的突出显著性，我们将App使用数据转化为 &lt;strong&gt;Beta(α,β)&lt;/strong&gt; 值，为了区分时间显著性，我们使用尖峰（excess kurtosis）δ来评价每个App的时间使用峰度：
+&lt;img src=&#34;http://7xsxev.com1.z0.glb.clouddn.com/Excess-kurtosis-expression.png&#34; alt=&#34;Excess Kurtosis Expression&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;通过尖峰值可以判断最近安装App的类型：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;一个高尖峰值的App意味着它越有可能是Short-term类App（Game）&lt;/li&gt;
+&lt;li&gt;一个低尖峰值的App意味着它越有可能是Long-term类App（Communication）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;Short-term类的App可以通过获取特定的特点的用户来获取平均打开频率。&lt;/strong&gt;&lt;br /&gt;
+&lt;strong&gt;Long-term类的App则可以通过获取所有用户的平均值。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;随着用户打开App的事件增加，我们可以计算最近安装App的打开概率，因此，我们使用贝叶斯平均其他用户的历史信息来计算接下来的使用信息。计算最近安装App的打开概率公式如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://7xsxev.com1.z0.glb.clouddn.com/App-cold-start-expression.png&#34; alt=&#34;App Cold Start Expression&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;通过计算公式，仅仅通过少量的用户打开App事件得到同一App的其他用户近似的非加权值的启动概率。&lt;strong&gt;用户打开App事件越多，该公式的准确率越高。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&#34;user-cold-start&#34;&gt;User Cold Start&lt;/h2&gt;
+
+&lt;h2 id=&#34;what-s-user-cold-start&#34;&gt;&lt;strong&gt;What&amp;rsquo;s User Cold Start&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;在这一小节，我们提出两种方法解决User冷启动问题，什么是User冷启动呢？
+当一个用户安装了一个Launcher软件（Aviate，Buzz，Go 等桌面软件），我们在不知道这个用户的任何信息下如何向该用户推荐App清单呢？这个就是User冷启动问题。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&#34;two-ways-to-solve&#34;&gt;&lt;strong&gt;Two Ways to Solve&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;最相似用户策略：
+当这个new User在安装了Launcher之后，我们可以在已知的用户集中找到跟他最相似的用户，并将这个用户的使用指标赋值给他。&lt;br /&gt;
+那么怎么去计算跟他最相似的用户呢，我们可以使用 &lt;strong&gt;Jaccard系数&lt;/strong&gt; 进行计算，这个系数主要用来比较样本集中的相似性和分散性的一个概率。&lt;br /&gt;
+&lt;strong&gt;计算出用户之间的相似度，就可以将最相似用户的App清单进行推送。&lt;/strong&gt;&lt;br /&gt;
+事实上，最相似的用户的App清单与新用户的清单还是有很大的不一样的，在极端条件下，也就是不涉及到敏感的用户信息条件下，他们之间的App清单相似度甚至不会超过一个 &lt;strong&gt;纯粹随机策略&lt;/strong&gt; （相当于“猴子排序”）。&lt;br /&gt;
+虽然这个策略提高了User冷启动的平均准确度，但是也限制了可生成用户建议数的范围。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;伪用户策略：
+通过生成“伪历史”（假的用户使用记录）可以解决用户冷启动问题，而且该策略可以作为新用户训练PTAN模型的一种方法。&lt;br /&gt;
+这个想法在于找到少量的相似用户，其App清单能够覆盖新用户的App清单。这是一个简单的 &lt;strong&gt;NP-Hard证明问题&lt;/strong&gt; 。&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;P.S 1: NP-Hard问题也就是不能在限定的时间内计算出结果的问题，只能通过候选答案来验证这个答案是不是我们已知问题的一个答案&lt;/p&gt;
+
+&lt;p&gt;P.S 2关于这个问题为什么是一个NP-Hard问题，论文中没有给出解释，如果想了解怎么判断一个问题是不是NP-Hard问题，可以到 &lt;a href=&#34;http://blog.csdn.net/com_stu_zhang/article/details/7248277&#34;&gt;这里&lt;/a&gt; 查看解释，因为解释非常复杂，请允许我不复制粘贴上来&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;通过算法5，我们生成了伪用户数据：
+&lt;img src=&#34;http://7xsxev.com1.z0.glb.clouddn.com/Build-pseudo-user.png&#34; alt=&#34;Build Pseudo User&#34; /&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

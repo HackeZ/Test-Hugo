@@ -1,0 +1,181 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> Fun in Docker Day-1 &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>Fun in Docker Day-1</h1>
+			  <span class="post-date">Sat, Aug 20, 2016</span>
+			      
+
+<h2 id="intro">Intro</h2>
+
+<p>今天心血来潮，想在 OSX 中重新体验一下 <code>Docker</code>，结果因为 <code>Docker</code> 是基于 <code>Linux</code>，在 OSX 中实在是 Fun 不起来，于是便纪录下来这天的过程。</p>
+
+<h2 id="install">Install</h2>
+
+<p>这部分没什么好说的， <code>Docker</code> 官方已经出了 <a href="https://docs.docker.com/docker-for-mac/">OSX</a> 的安装包，直接下载拖进 <code>Application/</code> 即可完成安装。</p>
+
+<p>安装完成之后，可以直接在命令行中运行：</p>
+
+<pre><code class="language-shell">$ docker --version  # Docker 主体
+$ docker-compose --version  # 定义和管理复杂 Docker 应用的工具
+$ docker-machine --version  # 简化 Docker 安装的工具
+</code></pre>
+
+<p>查看所有的安装工具是否能够正确启动。</p>
+
+<p>之后，便可以尝试运行 <code>Hello World</code> 和 <code>nginx</code> 玩一下了。</p>
+
+<pre><code class="language-shell"># Hello World
+$ docker run hello-world
+
+# nginx
+$ docker run -d -p 80:80 --name webserver nginx
+</code></pre>
+
+<h2 id="package">Package</h2>
+
+<p>以我的开源项目 <a href="https://www.github.com/HackeZ/getMeizi">getMeizi</a> 为例子尝试打包 <code>Golang应用</code> 。</p>
+
+<h4 id="first-try">First Try</h4>
+
+<p>首先我在项目的根目录下编写了一个 <code>Dockerfile</code> 文件，其内容为：</p>
+
+<pre><code>FROM golang:onbuild
+</code></pre>
+
+<p>然后通过 <code>$ docker build -t getmeizi .</code> 来构建一个镜像。</p>
+
+<p>但是这样构建的镜像会将 <code>Golang</code> 的整个环境都打包进去，生成的镜像大小为 <code>832.5 MB</code> 。</p>
+
+<p>很显然我们会更加愿意得到一个更灵活小巧的镜像，于是，我的目光转向了 <code>scratch</code> 。</p>
+
+<h4 id="second-try">Second Try</h4>
+
+<p>修改 <code>Dockerfile</code> 文件内容为：</p>
+
+<pre><code>FROM scratch
+ADD main /
+CMD [&quot;/main&quot;]
+</code></pre>
+
+<p>然后先将 <code>getMeizi</code> 应用编译完：</p>
+
+<pre><code>$ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+</code></pre>
+
+<p>最后使用 <code>$ docker build -t getmeizi .</code></p>
+
+<p>构建即可生成一个仅有 <code>5.83 MB</code> 大小的镜像。</p>
+
+<h2 id="push">Push</h2>
+
+<p>最后将打包好的镜像发布到 <strong>Docker.io</strong> 中：</p>
+
+<pre><code class="language-shell">$ docker images
+# REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+# getmeizi            latest              7ddcbed63a17        2 minutes ago         5.839 MB
+
+$ docker tag 7ddcbed63a17 hackerz/getmeizi
+
+$ docker images
+# REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+# getmeizi            latest              7ddcbed63a17        3 minutes ago         5.839 MB
+# hackerz/getmeizi    latest              7ddcbed63a17        3 minutes ago         5.839 MB
+
+$ docker login
+# ***
+# Login Succeeded
+
+$ docker push hackerz/getmeizi
+</code></pre>
+
+<p>打开 <a href="https://hub.docker.com/r/hackerz/getmeizi/">hackerz/getmeizi</a> 查看并编辑镜像描述。</p>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

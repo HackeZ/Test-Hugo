@@ -1,0 +1,179 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> The Channel in Golang &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>The Channel in Golang</h1>
+			  <span class="post-date">Wed, May 11, 2016</span>
+			      
+
+<p>Golang中的Channel分析</p>
+
+<p>作为Golang语言的核心，并发编程是学习Golang的必经之路。对于不同进程之间的通信手段总会涉及到跨进程通信，那么这个通信手段必须是一个可共享内存的方法，而Golang提倡的理念为：</p>
+
+<blockquote>
+<p>“应该以通信作为手段来共享内存”</p>
+</blockquote>
+
+<p>而这一句话的直接体现在于Golang所提供的一个预定义数据类型 —— <strong>Channel</strong></p>
+
+<p>Channel提供了一种机制。它既可以 <strong>同步</strong> 两个被并发执行的函数，又可以让这两个函数通过传递特定类型的值来进行 <strong>通信</strong>。使用Channel可以让我们编写更清晰且正确的代码。</p>
+
+<p>关于使用Channel需要记住的知识点：</p>
+
+<ul>
+<li>在同一时刻，仅有一个Goroutine能向同一个Channel发送元素值，同时也只有一个Goroutine能从它哪里接收元素值。</li>
+<li>Channel是一个FIFO的消息队列。</li>
+<li>Channel中的元素值已经确保具有原子性。</li>
+<li>Channel可以分为缓冲与非缓冲，它们之间的差别非常大。</li>
+<li>Channel可分为双向与单向，一般通道都会声明为双向，只有在限制函数体中使用通道的方式（只允许发送或接收）才会使用单向Channel。</li>
+</ul>
+
+<h2 id="talk-is-cheap-show-me-the-code">Talk is Cheap,Show me the Code!</h2>
+
+<ul>
+<li>初始化通道</li>
+</ul>
+
+<p>因为Channel属于引用类型之一，所以必须使用make关键字初始化它。</p>
+
+<pre><code class="language-go">// 缓冲通道（容纳int类型元素，有长度，可暂存元素）
+intChan := make(chan int, 5)
+
+// 非缓冲通道（容纳byte类型元素，无长度，不可暂存元素）
+byteChan := make(chan byte)
+</code></pre>
+
+<ul>
+<li>发送元素值</li>
+</ul>
+
+<pre><code class="language-go">// 向intChan通道发送一个元素值为5的元素
+intChan &lt;- 5
+</code></pre>
+
+<p>注意：向一个值为nil的Channel进行发送操作会造成当前Goroutine <strong>永久阻塞！</strong>。<br />
+而向一个已经塞满元素的Channel进行发送操作则会将当前的Goroutine <strong>阻塞</strong>，直至Channel中的元素被接收，所以一般会在 <strong>select</strong> 代码块中进行发送操作。</p>
+
+<ul>
+<li>接收元素值</li>
+</ul>
+
+<pre><code class="language-go">// 在intChan通道中接收一个元素值
+elem := &lt;-intChan
+
+// 接收元素值，并判断该通道是否已经关闭
+elem, ok := &lt;-intChan
+if !ok {
+    fmt.Println(&quot;Channel is Closed!&quot;)
+}
+</code></pre>
+
+<p>同样需要注意的是，如果向一个值为nil的Channel进行接收操作，同样会造成 <strong>永久阻塞！</strong><br />
+而向一个没有元素值的Channel进行接收操作，也会将当前的Goroutine <strong>阻塞</strong>，直至Channel中有了新的元素。</p>
+
+<ul>
+<li>关闭Channel</li>
+</ul>
+
+<p>关闭Channel并不是如其字面意思，完全将Channel关闭。而其正确的作用是告诉系统，不应该再允许任何针对被关闭的通道的发送操作，该通道已经被关闭，但是已经缓存在Channel中的元素不会受到影响，这也是Channel非常优秀的特性之一。</p>
+
+<pre><code class="language-go">// 调用内建函数close()关闭Channel
+close(intChan)
+</code></pre>
+
+<p>注意，无论任何时候，我们都 <strong>不应该</strong> 在接收端关闭Channel，因为我们永远都不知道发送端是否已经将元素发送完毕。</p>
+
+<hr />
+
+<blockquote>
+<p>最后，可以到<a href="https://www.github.com/HackeZ">这里</a>学习更多的Channel相关代码！</p>
+</blockquote>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Eclipse on HackerZ - Blog</title>
+    <link>http://hackez.github.io/tags/eclipse/</link>
+    <description>Recent content in Eclipse on HackerZ - Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 13 Jun 2016 20:45:25 +0800</lastBuildDate>
+    <atom:link href="http://hackez.github.io/tags/eclipse/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Learning in Hadoop - Day 1</title>
+      <link>http://hackez.github.io/hadoop-1/</link>
+      <pubDate>Mon, 13 Jun 2016 20:45:25 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/hadoop-1/</guid>
+      <description>&lt;p&gt;第一次玩Hadoop&lt;/p&gt;
+
+&lt;p&gt;最近在折腾机器学习，因为查阅到Yahoo的&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;《Predicting The Next App That You Are Going To Use》&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;这一篇Paper的时候，它提到了Google的 &lt;strong&gt;MapReduce&lt;/strong&gt;以及 &lt;strong&gt;Word2Vec&lt;/strong&gt; 。相信折腾过机器学习的小伙伴都会比较熟悉这两个东西了。于是，为了更深入地进行学习，我便无情地掉进了这个 &lt;strong&gt;坑&lt;/strong&gt; 里。&lt;/p&gt;
+
+&lt;p&gt;首先介绍一下背景，Yahoo的这篇Paper主要就是根据用户日常APP的使用习惯，然后对用户下一启动的APP进行预测。因为Yahoo认为日常手机的使用场景会对哪个APP的开启与否有着很强的关联性，于是他们便使用了 &lt;strong&gt;Word2Vec&lt;/strong&gt; 对用户手机中记录的6个手机事件：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;em&gt;Last Location Update&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Last Charge Cavle&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Last Audio Cable&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Last Context Trigger&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Last Context Pulled&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;Last App Open&lt;/em&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;进行计算词向量，用于文本预测。而Word2Vec有着3个广为流传的版本：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;C&lt;/li&gt;
+&lt;li&gt;Python&lt;/li&gt;
+&lt;li&gt;Java&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;但是这3个版本对于Yahoo来说性能都是不足的，经我测试，一个800M的文本在C语言版本中计算时间需要20Min！&lt;/p&gt;
+
+&lt;p&gt;而在预测下一个APP这个场景里，这种计算速度是完全不可以接受的，于是Yahoo他们利用MapReduce重写了一个Word2Vec，将这个版本放在云端进行计算。这就是我进行MapReduce学习的原因。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

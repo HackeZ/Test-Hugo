@@ -1,0 +1,266 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> Fun in Docker Day-2 &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>Fun in Docker Day-2</h1>
+			  <span class="post-date">Wed, Aug 31, 2016</span>
+			      
+
+<h2 id="intro">Intro</h2>
+
+<p>今天来详细讲一下之前没有讲清楚的 Docker 镜像打包方法。</p>
+
+<h2 id="page-command">Page Command</h2>
+
+<p>我们都知道，打包 Docker 应用有两种方式：</p>
+
+<ol>
+<li>在已经存在的 images 中 commit 修改。</li>
+<li>创建一个全新的 images 。</li>
+</ol>
+
+<p>这两种方法各有优缺点。下面都来说一下怎么进行操作。</p>
+
+<h2 id="way-one">Way One</h2>
+
+<p>在已有的 images 中修改并 commit</p>
+
+<ul>
+<li>优点：
+
+<ul>
+<li>这是最方便快捷的方法</li>
+<li>可以避免自己打包而导致出现的一些问题，如静态文件引用错误等</li>
+</ul></li>
+<li>缺点：
+
+<ul>
+<li>可定制程度低</li>
+<li>打包出来的镜像文件可能会很大，不利于存储</li>
+</ul></li>
+</ul>
+
+<p>在 Docker 官网的文档中已经很详细操作过了，下面的是我翻译的版本。具体的官方英文<a href="https://docs.docker.com/engine/tutorials/dockerimages/#/updating-and-committing-an-image">点我</a></p>
+
+<p>首先你需要一个 images 才能进行更新操作呀，所以首先：</p>
+
+<pre><code class="language-shell">#   获取 images
+$ docker pull training/sinatra
+#   运行 images 并进入到命令行中
+$ docker run -t -i training/sinatra /bin/bash
+root@0b2616b0e5a8:/#
+</code></pre>
+
+<blockquote>
+<p>记住这个被创建容器的 ID， <code>0b2616b0e5a8</code> ，一会你会用得上的。</p>
+</blockquote>
+
+<p>接上面的操作&hellip;</p>
+
+<pre><code class="language-shell">#   首先更新一下 Ruby
+root@0b2616b0e5a8:/# apt-get install -y ruby2.0-dev
+#   然后安装  gem  json
+root@0b2616b0e5a8:/# gem2.0 install json
+</code></pre>
+
+<p>完成了这些更改之后，你可以运行 <code>exit</code> 命令退出。</p>
+
+<p>现在你可以像使用 <code>git</code> 一样更新这个镜像了：</p>
+
+<pre><code class="language-shell">#   '-m' '-a' 这些看起来很熟悉啦，和 git 中是一样的，就不再说了...
+$ docker commit -m &quot;Added json gem&quot; -a &quot;Kate Smith&quot; \
+0b2616b0e5a8 ouruser/sinatra:v2
+
+4f177bd27a9ff0f6dc2a830403925b5360bfe0b93d476f7fc3231110e7f71b1c
+</code></pre>
+
+<p>然后运行一下 <code>docker images</code> 来看看新创建的容器吧</p>
+
+<pre><code class="language-shell">$ docker images
+
+REPOSITORY          TAG     IMAGE ID       CREATED       SIZE
+training/sinatra    latest  5bc342fa0b91   10 hours ago  446.7 MB
+ouruser/sinatra     v2      3c59e02ddd1a   10 hours ago  446.7 MB
+ouruser/sinatra     latest  5db5f8471261   10 hours ago  446.7 MB
+</code></pre>
+
+<h2 id="way-two">Way Two</h2>
+
+<p>完全创建一个新的 images 是很多人第一时间就想做的，但是官网简介中并没有太多详细标注的细节，那么我就以我的第一视角讲诉一下我是怎么创建一个全新的  images 的。</p>
+
+<p>依然是 Go ，首先创建一个简单的读取文件内容的项目：</p>
+
+<pre><code class="language-shell">$ cd $GOPATH/src
+$ mkdir File_Reader
+$ vim File_Reader/main.go
+</code></pre>
+
+<p>源代码如下：</p>
+
+<pre><code class="language-go">package main
+
+import (
+	&quot;bufio&quot;
+	&quot;fmt&quot;
+	&quot;io&quot;
+	&quot;log&quot;
+	&quot;os&quot;
+)
+
+func main() {
+	file, err := os.OpenFile(&quot;./file.txt&quot;, os.O_RDONLY, os.ModePerm)
+	defer file.Close()
+
+	if err != nil {
+		log.Println(&quot;file.txt open false!&quot;)
+	}
+
+	fileReader := bufio.NewReader(file)
+
+	for {
+		line, err := fileReader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Println(&quot;Read File Content Failed!&quot;, err.Error())
+			return
+		}
+		fmt.Println(line)
+	}
+
+	fmt.Println(&quot;File Read Done!&quot;)
+}
+</code></pre>
+
+<p>接下来就是在当前目录下创建一个 <code>file.txt</code> ，然后输入你想要的内容进去。</p>
+
+<pre><code class="language-shell">$ &quot;xxxxxx&quot; &gt;&gt; file.txt
+</code></pre>
+
+<p>接下来就需要先将源代码文件编译成二进制文件，因为如果我们希望这个 images 越小，越少的编译环境可以达到更好的效果。
+命令如之前一样：</p>
+
+<pre><code class="language-shell">$ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+</code></pre>
+
+<p>然后你可以看到当前目录下出现了一个 <code>main</code> 的可执行文件。</p>
+
+<p>重要的步骤来了，当前目录下创建一个 <code>Dockerfile</code> 文件，输入如下内容：</p>
+
+<pre><code>FROM scratch
+MAINTAINER HackerZ
+ADD main /
+ADD file.txt /
+CMD [&quot;/main&quot;]
+</code></pre>
+
+<p>我来解释一下这些都是什么意思：</p>
+
+<ul>
+<li>FROM : Docker 用来指定该镜像是基于哪个基础镜像构建的</li>
+<li>MAINTAINER : 镜像创建人的名字</li>
+<li>ADD  : 从 Dockerfile 所在目录拷贝文件到指定路径下</li>
+<li>CMD  : 用来指示当运行 <code>docker run</code> 命令运行该镜像时要执行的命令</li>
+</ul>
+
+<p>其余的还有：</p>
+
+<ul>
+<li>EXPOSE : 开放的网络端口号</li>
+<li>ENV    : 设置环境变量</li>
+<li>VOLUME : 可以将本地文件夹或者其他容器的文件夹挂载到该容器中。</li>
+<li>WORKDIR: 切换目录用，可以多次切换(相当于cd命令)，对RUN,CMD,ENTRYPOINT生效</li>
+<li>ONBUILD: ONBUILD 指定的命令在构建镜像时并不执行，而是在它的子镜像中执行</li>
+</ul>
+
+<p>好了，运行 <code>docker build -t fileReader .</code> 创建全新的 images 吧。</p>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

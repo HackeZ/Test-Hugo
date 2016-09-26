@@ -1,0 +1,195 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title> CircuitBreaker 设计模式 &middot; HackerZ - Blog </title>
+
+  
+  <link rel="stylesheet" href="http://hackez.github.io/css/poole.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/syntax.css">
+  <link rel="stylesheet" href="http://hackez.github.io/css/hyde.css">
+  <link rel="stylesheet" href="http://fonts.useso.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.2.0/languages/go.min.js"></script>
+  <link rel="stylesheet" href="//cdn.bootcss.com/highlight.js/9.2.0/styles/monokai_sublime.min.css">
+  
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="HackerZ - Blog" />
+
+  
+  
+  <script type="text/javascript"> 
+  var sc_project=10940566; 
+  var sc_invisible=0; 
+  var sc_security="89189822"; 
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="web stats"
+  href="http://statcounter.com/free-web-stats/"
+  target="_blank"><img class="statcounter"
+  src="//c.statcounter.com/10940566/0/89189822/0/" alt="web
+  stats"></a></div></noscript>
+  
+</head>
+
+	<body class="theme-base-08">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+  <div class="round-head">
+    <img style="margin: auto;" src="http://hackez.github.io/author-head.png" alt="HackerZ">
+    <p style="text-align: center;">HackerZ</p>
+  </div>
+
+    <div class="sidebar-about">
+      <a href="http://hackez.github.io/"><h1>HackerZ - Blog</h1></a>
+      <p class="lead">
+       Welcome to my personal Blog 
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/about-me/"> About Me </a></li>
+      
+        <li><a href="/welcome/"> Welcome </a></li>
+      
+        <li><a href="/booklist"> Book List </a></li>
+      
+    </ul>
+
+    <p>&copy; 2016. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>CircuitBreaker 设计模式</h1>
+			  <span class="post-date">Sun, Sep 25, 2016</span>
+			      
+
+<h2 id="intro">Intro</h2>
+
+<p>今天发现了 <a href="https://github.com/sony/">Sony</a> 竟然在 Github 上开源了他们的一些项目！而他们也是在用 <code>Golang</code> 在开发后台！</p>
+
+<p><strong>Amazing</strong></p>
+
+<p>于是不亦乐乎地看起了其中的 Golang 开源项目，而其中一个名为 <a href="https://github.com/sony/gobreaker">sony/gobreaker</a> 的项目引起了我的注意。</p>
+
+<p>项目简述中描述了这是一个 Golang 版本的 <strong>CircuitBreaker</strong> 实现！</p>
+
+<p>那么什么是 <strong>CircuitBreaker（断路器）</strong> 呢？下面就来一起看看。</p>
+
+<h2 id="what-is-circuitbreaker">What is CircuitBreaker</h2>
+
+<p>根据传统的解释，断路器是广泛用于 <em>电子工程产业</em> 的一个重要安全保障！</p>
+
+<p>当你家里的洗衣机漏电了，电流就会瞬间增大，那么连接家里总线的 <strong>断路器</strong> 就会剩下，及时切断总电源，防止意外的发生！</p>
+
+<p>那么在最近的 <code>微服务</code> 越来越流行的时代，软件架构开始将 <strong>断路器</strong> 这一概念添加进来了。</p>
+
+<p>我们知道，当你一旦开始将系统中的一部分拆解为一个独立服务，那么你就已经走进了 <code>微服务</code> 的时代了。
+而在微服务中最重要的是要保证服务运行的稳定性，如果独立服务无法提供高质量或者是不能提供服务，那么这将会导致整个系统的崩溃！</p>
+
+<p>而 <code>微服务</code> 会遇到的故障有可能是：
+    - 瞬时故障：如慢的网络连接、超时，资源过度使用而暂时不可用；
+    - 不容易预见的突发故障：需要更长时间来纠正的故障；</p>
+
+<p>而解决这些故障常常有两种方法：
+    - 重试机制：对于预期的短暂故障问题，通过重试模式是可以解决的；
+    - 断路器（CircuitBreaker）模式：将受保护的服务封装在一个可以监控故障的断路器对象中，当故障达到一定门限，断路器将跳闸（trip），所有后继调用将不会发往受保护的服务而由断路器对象之间返回错误。对于需要更长时间解决的故障问题，不断重试就没有太大意义了，可以使用断路器模式。</p>
+
+<p><img src="http://martinfowler.com/bliki/images/circuitBreaker/sketch.png?_=0.814744712175792" alt="CircuitBreaker - Sketch" /></p>
+
+<p><img src="http://martinfowler.com/bliki/images/circuitBreaker/state.png?_=0.47541342622693494" alt="CircuitBreaker - State" /></p>
+
+<h2 id="action-in-gobreaker">Action in gobreaker</h2>
+
+<p>简单介绍完 CircuitBreaker 的概念，那么接下来就结合 <a href="https://github.com/sony/gobreaker">gobreaker</a> 的源码实际看看如何设计一个 断触器。</p>
+
+<p>首先一个值得我们关注的点是 CircuitBreaker State， 它被设计为 <strong>3</strong> 种状态：</p>
+
+<pre><code class="language-go">type State int
+const (
+    StateClosed State = iota
+    StateHalfOpen
+    StateOpen
+)
+</code></pre>
+
+<p>CircuitBreaker 会根据当前处于不同的 <code>State</code> ，而判断最多可以通过多少个 <code>Request</code> 。</p>
+
+<p>接下来是 <code>Setting</code> ，通过 Setting 对象的值，可以新建出一个 CircuitBreaker ：</p>
+
+<pre><code class="language-go">type Settings struct {
+	Name          string  // CircuitBreaker 的名字
+	MaxRequests   uint32  // 最大连接数，根据 State 会自动调节允许通过的 Request 值
+	Interval      time.Duration // 当 CircuitBreaker 处于 Close 状态的时候，循环该时间段，清空连接数
+	Timeout       time.Duration // 当 CircuitBreaker 处于 Open 状态的时候，如果触发了该超时时间，将它置为 Half-Open
+	ReadyToTrip   func(counts Counts) bool // 判断当前失败数，是否应该进入 Close 状态
+	OnStateChange func(name string, from State, to State) // 当状态发生变化时候，触发该函数
+}
+
+func NewCircuitBreaker(st Settings) *CircuitBreaker {
+    ...
+}
+</code></pre>
+
+<p>因为这个源码实现其实非常简单，我也就不一一讲诉了，就再将一个比较重要的函数 <code>Execute</code> 吧：</p>
+
+<pre><code class="language-go">func (cb *CircuitBreaker) Execute(req func() (interface{}, error)) (interface{}, error) {
+	generation, err := cb.beforeRequest()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		e := recover()
+		if e != nil {
+			cb.afterRequest(generation, fmt.Errorf(&quot;panic in request&quot;))
+			panic(e)
+		}
+	}()
+
+	result, err := req()
+	cb.afterRequest(generation, err)
+	return result, err
+}
+</code></pre>
+
+<p>该函数用于执行需要 CircuitBreaker 触发的函数，详情可以参考这里 =&gt; <a href="https://github.com/sony/gobreaker/blob/master/example/http_breaker.go">example</a></p>
+
+<p>首先执行 CircuitBreaker 的 beforeRequest，然后执行传进来的 req 函数，最后执行 afterRequest ，并捕获异常，如果有异常， recover 它，不停止程序，返回错误信息。</p>
+
+<h2 id="参考网站">参考网站</h2>
+
+<p><a href="http://blog.sina.com.cn/s/blog_72ef7bea0102vvsn.html">mryqu - blog</a></p>
+
+<p><a href="http://www.cnblogs.com/davidwang456/p/3976607.html">English</a></p>
+
+			</div>
+
+			
+		</div>
+
+  </body>
+</html>

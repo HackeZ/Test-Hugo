@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Linux on HackerZ - Blog</title>
+    <link>http://hackez.github.io/categories/linux/</link>
+    <description>Recent content in Linux on HackerZ - Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 18 Aug 2016 16:03:05 +0800</lastBuildDate>
+    <atom:link href="http://hackez.github.io/categories/linux/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Global Ignore File in Git</title>
+      <link>http://hackez.github.io/global_gitignore/</link>
+      <pubDate>Thu, 18 Aug 2016 16:03:05 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/global_gitignore/</guid>
+      <description>
+
+&lt;h2 id=&#34;intro&#34;&gt;Intro&lt;/h2&gt;
+
+&lt;p&gt;自从换了 OSX 进行开发，就发现每当修改了项目文件， OSX 在项目目录都会生成一个 &lt;code&gt;.DS_Store&lt;/code&gt; 的隐藏文件，该文件用于记录当前目录下文件的 Meta 信息。&lt;/p&gt;
+
+&lt;p&gt;对于这样的情况，我不可能在每个项目的根目录都配置一个 &lt;code&gt;.gitignore&lt;/code&gt; 文件，这样可复用性太地了，于是我便想能不能配置一个 Git 的 &lt;code&gt;.gitignore_global&lt;/code&gt; 文件，统一忽略掉所有我不需要上传的文件呢。&lt;/p&gt;
+
+&lt;h2 id=&#34;solve&#34;&gt;Solve&lt;/h2&gt;
+
+&lt;p&gt;Git 还真有这样的方法，它提供了一个 &lt;strong&gt;忽略规则&lt;/strong&gt; ，我们可以通过编写一个忽略规则文件，然后通过如下的命令配置进 Git :&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ git config --global core.excludesfile &#39;忽略文件完整路径&#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;即可。&lt;/p&gt;
+
+&lt;h2 id=&#34;global-gitignore&#34;&gt;Global GitIgnore&lt;/h2&gt;
+
+&lt;p&gt;新建一个 &lt;code&gt;.gitignore_global&lt;/code&gt; 文件，并往里面编写忽略文件语法，该语法符合正则表达式， &lt;code&gt;#&lt;/code&gt; 号为注释，每一行为一个忽略规则：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# OSX
+.DS_Store
+.DS_Store*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python
+*.pyc
+
+# C
+*.[ao]
+
+# Package
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

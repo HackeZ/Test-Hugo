@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Qiniu on HackerZ - Blog</title>
+    <link>http://hackez.github.io/tags/qiniu/</link>
+    <description>Recent content in Qiniu on HackerZ - Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 15 Apr 2016 16:46:54 +0800</lastBuildDate>
+    <atom:link href="http://hackez.github.io/tags/qiniu/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Qiniu Go SDK v7 Problem</title>
+      <link>http://hackez.github.io/qn-sdkv7-pb/</link>
+      <pubDate>Fri, 15 Apr 2016 16:46:54 +0800</pubDate>
+      
+      <guid>http://hackez.github.io/qn-sdkv7-pb/</guid>
+      <description>&lt;p&gt;下载七牛Go SDK v7遇到的问题&lt;/p&gt;
+
+&lt;p&gt;今天想要使用七牛的Go SDK时候遇到了肯定会出现的一个情况，那就是&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;$ go get -u qiniupkg.com/api.v7&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;命令出现了&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;golang.org/x/net/context&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;不能下载的问题，首先说一下为什么肯定会报错的问题，那就是Go官方将这个包的下载地址更改了（后来翻墙到Go官网发现的），但是不知道为什么go get命令还是将这个包的下载地址设置为原来的那个。
+好吧，于是我试着使用七牛提供的方法下载了那个压缩包，并将其解压在&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;$GOPATH/src&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;目录下，再次运行go get 命令，这时候出现了&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;golang.org/x/net/content is not using a known version&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;的错误。
+无奈之下，只有翻墙出去Go官方网站查看文档了，然后发现Go官方将这个&lt;a href=&#34;https://github.com/golang/net&#34;&gt;net包&lt;/a&gt;放在了Github中，于是我在Github中下载下来这个包，然后在&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;$GOPATH/src&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;下，也就是Github.com文件夹的平级目录下手动创建了该路径&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;&amp;hellip;/golang.org/x&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;，然后将net包放进去，再次运行&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;$ go get -u qiniupkg.com/api.v7&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;OK，成功了，接下来就可以开始愉快地玩耍了:)&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
